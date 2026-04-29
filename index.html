@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="author" content="Huruma Musagara Benjamin">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="keywords" content="CURRICULUM VITAE Benjamin, Huruma, Benjamin, Musagara, Developpeur, Ben, CV, Informatique, portfolio de Huruma, Developpement web en RDC, Etudiant congolais, Passioné de la blockchain, crypto, quantique, ISIG, Goma, RDC">
+<meta name="description" content="Site personnel et portfolio de Huruma Musagara Benjamin, Développeur Web, basé en RDC">
+<link rel="icon" href="./photo_icone.WebP"/>
+<title>Site de benjamin Huruma</title>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+
+
+body,h1,h2,h3,h4,h5 {font-family: "Poppins", sans-serif; color: beige;}
+body {font-size:16px; background-color: rgb(0, 0, 0);} 
+.w3-half img{margin-bottom:-6px;margin-top:16px;opacity:0.8;cursor:pointer}
+.w3-half img:hover{opacity:1}
+
+/* --- Styles pour le Mode Clair --- */
+body.light-mode {
+  background-color: #ffffff;
+  color: #000000;
+}
+body.light-mode h1, 
+body.light-mode h2, 
+body.light-mode h3, 
+body.light-mode h4, 
+body.light-mode h5, 
+body.light-mode p, 
+body.light-mode label {
+  color: #000000;
+}
+
+/* Bouton flottant pour le changement de thème */
+.theme-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  font-size: 30px;
+  background-color: white;
+  border: 3px solid red;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.3s;
+}
+
+</style>
+</head>
+<body>
+<button id="themeToggle" class="theme-btn" title="Changer de thème">☀️</button>
+
+<!-- Barre latérale/menu -->
+<nav class="w3-sidebar w3-red w3-collapse w3-top w3-large w3-padding" style="z-index:3;width:300px;font-weight:bold;" id="mySidebar"><br>
+  <a href="javascript:void(0)" onclick="w3_close()" class="w3-button w3-hide-large w3-display-topleft" style="width:100%;font-size:22px">Fermer le Menu</a>
+  <div class="w3-container">
+    <h3 class="w3-padding-64"><b>Benjamin Huruma<br>Software Developer junior</b></h3>
+  </div>
+  <div class="w3-bar-block">
+    <a href="#Accueil" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Accueil</a> 
+    <a href="#À propos" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">À propos</a> 
+    <a href="#Formation" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Formation</a> 
+    <a href="#Photos" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Photos</a> 
+    <a href="#Mes Compétences" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Mes Compétences</a>
+    <a href="#Mes réalisations" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Mes réalisations</a>    
+    <!--a href="#Un peu de musique" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Un peu de musique</a-->
+    <a href="#Contactez-moi" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Contactez-moi</a>
+  </div>
+</nav>
+
+<!-- Top menu sur petit écran -->
+<header class="w3-container w3-top w3-hide-large w3-red w3-xlarge w3-padding">
+  <a href="javascript:void(0)" class="w3-button w3-red w3-margin-right" onclick="w3_open()">☰</a>
+  <span>Site Personnel ou Portfolio de Benjamin Huruma</span>
+</header>
+
+<!-- Overlay effect when opening sidebar on small screens -->
+<div class="w3-overlay w3-hide-large" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
+
+<!-- !CONTENU DE PAGE! -->
+<div class="w3-main" style="margin-left:340px;margin-right:40px">
+
+  <!-- Accueil -->
+  <div class="w3-container" style="margin-top:80px" id="Accueil">
+    <h1 class="w3-jumbo"><b>Benjamin Huruma</b></h1>
+    <h1 class="w3-xxxlarge w3-text-red"><b>Accueil</b></h1>
+    <hr style="width:50px;border:5px solid red" class="w3-round">
+  </div>
+  
+  <!-- Photo -->
+  <div class="w3-row-padding">
+    <div class="w3-half">
+      <img src="./ma_photo.WebP" style="width: 100%" onclick="onClick(this)" alt="Photo de Benjamin Huruma">
+    </div>
+  </div>
+
+  <!-- Modèle de plein écran sur click-->
+  <div id="modal01" class="w3-modal w3-black" style="padding-top:0" onclick="this.style.display='none'">
+    <span class="w3-button w3-black w3-xxlarge w3-display-topright">×</span>
+    <div class="w3-modal-content w3-animate-zoom w3-center w3-transparent w3-padding-64">
+      <img id="img01" class="w3-image">
+      <p id="caption"></p>
+    </div>
+  </div>
+
+  <!-- À PROPOS -->
+  <div class="w3-container" id="À propos" style="margin-top:75px">
+    <h1 class="w3-xxxlarge w3-text-red"><b>À propos.</b></h1>
+    <hr style="width:50px;border:5px solid red" class="w3-round">
+    <p>Je suis Huruma Musagara Benjamin, jeune Développeur logiciel junior passioné par la programmation et révant d'un monde meilleur grâce à l'Informatique et nouvelles technologies en unissant nos éfforts !</p> 
+    <P>Oui, grâce aux multiples avantages de l'informatique et des nouvelles technologies dans divers domaines et surtout à leur utilisation etiquement responsable, nous pouvons considérablement améliorer nos conditions de vie. 
+    </P>
+    <p>Développeur junior oui, je construit et consolide progressivement mes compétences avec une approche rigoureuse axée sur la logique, le réalisme technique et la qualité du travail. Je m'interesse particulièrement au développement web, aux sysytèmes distribués ou blockchains, la cybersécurité et à l'informatique tout court, avec une volonté claire de comprendre, utiliser et transformer.
+    J'aborde chaque projet comme une opportunité d'apprentissage concret, en prviligiant des solutions durables, fonctionnelles. Mon objectif est de développer des applications fiables, cohérentes et utilses à la comunauté,...
+    </p>
+  </div>
+  
+  <!-- FORMATION -->
+  <div class="w3-container" id="Formation" style="margin-top:75px">
+    <h1 class="w3-xxxlarge w3-text-red"><b>Formation</b></h1>
+    <hr style="width:50px;border:5px solid red" class="w3-round">
+    <p>Ma formation demarre commence en 2011 à l'école Primaire SEBYERA; et en 2018 je termine mes études primaires et j'obtient un Certificat de fin d'études primaires.</p>
+    <p>Et ensuite en septembre 2018 jusqu'en Juillet 2024; j'ai fais mon cursus sécondaire et j'ai obtenu un Diplome d'Etat en secrétariat-Administration.</p>
+    <p>Et maintenant je suis à l'ISIG Goma pour mes études supérieurs en première année de licence dans le domaine de Sciences et technologies, filière Sciences informatiques et mention Génie logiciel</p>
+    <p>Avec mon amour pour l'Informatique, Je suis encore qu'à l'école secondaire où l'on avait du mal avec le cours qui nécessité la pratique comme l'Informatique malgré un temps de pratique, on manqué l'outil pour pratiquer à la maison, et c'est là que je trouve l'opportunité, un petit poste d'opérateur de saisie stagiaire dans le secrétariat Les Optique, c'est là que je suis entrer réelement en contact avec l'outil principal de ma passion, l'ordinateur, depuis ce jours-là je ne cesse d'apprendre du jour le jour</p>
+    <p>C'est dans cet esprit que je choisi de m'orienter vers l'ISIG-Goma pour y faire mes études supérieures en Informatique, orientation Génie logiciel bien évidemment !
+    Et mon université commence à contribuer significativement à mon apprentissage à nous montrant le chemins vers des nouvelles connaissance, les compétence utile.</p>
+    <p>Pour des informations plus complète voici mon curriculum vitae, téléchargé-le simplement via ce bouton ci-dessous 
+    </p>
+    <a href="./CURRICULUM VITAE.pdf" target="./CURRICULUM VITAE.pdf" class="w3-button w3-block w3-padding-large w3-red w3-margin-bottom" style="color: red; width: 300px; height: 70px;"><h3><b>Télécharger mon CV</b></h3></a>
+    
+  </div>
+
+  <!-- Photos -->
+  <div class="w3-container" id="Photos" style="margin-top:75px">
+    <h1 class="w3-xxxlarge w3-text-red"><b>Photos</b></h1>
+    <hr style="width:50px;border:5px solid red" class="w3-round">
+    <div class="w3-col m4 w3-margin-bottom">
+      <div class="w3-light-grey">
+        <img src="./Moi_en_noir_blanc.WebP" alt="Benjamin huruma" style="width:100%">
+        <div class="w3-container">
+          <h3>Benjamin huruma</h3>
+          <p class="w3-opacity">Benjamin Huruma en 2024</p>
+          <p>Jeune Développeur junior.</p>
+        </div>
+      </div> 
+    </div>
+  </div>
+
+  <!-- MES COMPETENCES -->
+  <div class="w3-container" id="Compétences" style="margin-top:75px">
+    <h1 class="w3-xxxlarge w3-text-red"><b>Mes Compétences</b></h1>
+    <hr style="width:50px;border:5px solid red" class="w3-round">
+    <p>Engagé dans une progression constante, je travail à transformer mes connaissances en compétences solides, avec l'ambition de devenir un dévelopeur compétent, autonome et capable de répondre efficacement à des problématiques réelles.</p>
+  </div>
+
+  <div class="w3-row-padding">
+    <div class="w3-half w3-margin-bottom">
+      <ul class="w3-ul w3-light-grey w3-center">
+        <li class="w3-dark-grey w3-xlarge w3-padding-32">Compétences de Base</li>
+        <li class="w3-padding-16"><b>Maitrise des outils Bureautique: Word, Excel, PowerPoint,...</b></li>
+        <li class="w3-padding-16"><b>Parfaite capacité de s'exprimer en Français, Swahili et en Anglais</b></li>
+        <li class="w3-padding-16"><b>Maitrise de l'outil Informatique</b></li>
+        <li class="w3-padding-16"><b>Maitrise de PhotoShop à 80%</b></li>
+        </li>
+      </ul>
+    </div>
+        
+    <div class="w3-half">
+      <ul class="w3-ul w3-light-grey w3-center">
+        <li class="w3-red w3-xlarge w3-padding-32">Compétences En cours</li>
+        <li class="w3-padding-16"><B>Compétences en Programmation Desktop (Python, C#)</B></li>
+        <li class="w3-padding-16"><b>Compétences en Porgrammation Web (HTML, CSS et JavaScript)</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- MES REALISATIONS -->
+  <div class="w3-container" id="Mes réalisations" style="margin-top:75px">
+    <h1 class="w3-xxxlarge w3-text-red"><b>Mes réalisations</b></h1>
+    <hr style="width:50px;border:5px solid red" class="w3-round">
+    <p>Au fil des ans, mise à part mon poste de Opérateur de saisie, Formateur et Imprimeur chez LES OPTIQUES WORLD (jusqu'à maitenant); je me suis aussi orienté vers le monde de la blockcahin, précisement vers mi-2025. </p>
+      <p>Et j'ai eu l'honneur et le privilège d'avoir de très bon mentors Martin Musagara (voir Gomahub via @GOMA_Drep sur X.com) pour me guider à tavers ce monde complexe et vaste qui est celle du Web3</p>
+      <p>Très vite (Juillet 2025) j'ai eu la chance de participer activement dans le programme de Réviseur communautaire de Catalyst dans l'écosystème Cardano (voir <u><B>https://cardano.org/</B></u>) deux fois.</p>
+      Mais aussi je suis aussi memebre actif dans l'écosystème Midnight (une blockchain de quatrième géneration, voir <b><U>https://midnight.network/</U></b> ) 
+      </p>
+      <p>Voici en images quelques certificats de la Blockchain Midnight :</p>
+    </p>
+    <div class="w3-row-padding">
+      <div class="w3-half">
+        <img src="./certificatMidnight1.WebP" style="width:100%;" onclick="onClick(this)" alt="Certificat de Benjamin 1">
+
+      </div>
+      <div class="w3-half">
+        <img src="./CertificatMidnight2.WebP" style="width:100%;" onclick="onClick(this)" alt="Certificat de Benjamin 2">
+
+      </div>
+
+    </div>
+ 
+  </div>
+
+  <!-- UN PEU DE MUSIQUE
+
+  <div class="w3-container" id="Un peu de musique" style="margin-top:75px">
+    <h1 class="w3-xxxlarge w3-text-red"><b>Un peu de musique</b></h1>
+    <hr style="width:50px;border:5px solid red" class="w3-round">
+    <p>Un cadeau pour vous, très chèr(e) visiteur de mon site !
+      Un excellente chanson vidéo de Petits chanteurs et un audio génial !!!
+    </p>
+    <video src="./../media/videos/Humilite_de_Dieu.mp4" width="600" height="400" controls></video>
+    <br>
+    <audio src="./../media/audios/What_A_Beautiful_name.mp3" controls></audio>
+  </div>
+  -->
+  <!-- CONTACTEZ-MOI -->
+  <div class="w3-container" id="Contactez-moi" style="margin-top:75px">
+    <h1 class="w3-xxxlarge w3-text-red"><b>Contactez-moi</b></h1>
+    <hr style="width:50px;border:5px solid red" class="w3-round">
+    <p>Souhaitez-vous m'écrire ? Sentez-vous libre de compléter ce petit formulaire, J'aime rencontrer des nouvelles personnes !</p>
+    <form action="mailto:benjaminhuruma@gmail.com" method="post" enctype="text/plain">
+      <div class="w3-section">
+        <label>Noms</label>
+        <input class="w3-input w3-border" type="text" name="Name" required>
+      </div>
+      <div class="w3-section">
+        <label>Email</label>
+        <input class="w3-input w3-border" type="email" name="Email" required>
+      </div>
+      <div class="w3-section">
+        <label>Message</label>
+        <input class="w3-input w3-border" type="text" name="Message" required>
+      </div>
+      <button type="submit" class="w3-button w3-block w3-padding-large w3-red w3-margin-bottom">Envoyer votre Message</button>
+      <br>
+      <br>
+      <a href="#Accueil" class="w3-button w3-block w3-padding-large w3-red w3-margin-bottom"></i>Revenir à l'accueil</a>
+    </form>  
+  </div>
+
+ <!-- FIN DU CONTENU DE LA PAGE -->
+</div>
+<br>
+
+
+<footer class="w3-center w3-black w3-padding-64">
+  
+  <div class="w3-light-grey w3-container w3-padding-32" style="margin-top:55px;">
+    
+    <p class="w3-large"><b>Je suis sur</b></p>
+    
+    <div class="w3-xlarge w3-margin-bottom">
+      <a href="#" target="_blank" class="w3-hover-opacity" style="color: black; margin: 0 10px; text-decoration: none;"><i class="fa fa-linkedin"></i></a>
+      <a href="#" target="_blank" class="w3-hover-opacity" style="color: black; margin: 0 10px; text-decoration: none;"><i class="fa fa-facebook-official"></i></a>
+      <a href="#" target="_blank" class="w3-hover-opacity" style="color: black; margin: 0 10px; text-decoration: none;"><i class="fa fa-x"></i></a>  
+    </div>
+    <br>
+
+    <p>Created by <a href="#" target="_blank" class="w3-hover-opacity" style="color: black;"><b>Benjamin Huruma</b></a></p>
+  </div>
+
+  <br>
+  <center>
+    Vous pouvez aussi me contacter par : +243 981 082 394 ou via <b><u>benjaminhuruma@gmail.com</u></b>
+    Goma / RDC
+  </center>
+</footer>
+
+
+<script>
+
+// Fonctionnalité Mode Sombre / Clair
+const themeToggleBtn = document.getElementById("themeToggle");
+
+themeToggleBtn.addEventListener("click", function() {
+  // Ajoute ou enlève la classe "light-mode" sur le body
+  document.body.classList.toggle("light-mode");
+  
+  // Change l'icône en fonction du mode
+  if (document.body.classList.contains("light-mode")) {
+    themeToggleBtn.innerHTML = "🌙"; // Affiche la lune si on est en mode clair
+  } else {
+    themeToggleBtn.innerHTML = "☀️"; // Affiche le soleil si on est en mode sombre
+  }
+});
+
+// Script pour ouvrir et fermer le sidebar
+function w3_open() {
+  document.getElementById("mySidebar").style.display = "block";
+  document.getElementById("myOverlay").style.display = "block";
+}
+ 
+function w3_close() {
+  document.getElementById("mySidebar").style.display = "none";
+  document.getElementById("myOverlay").style.display = "none";
+}
+
+// Modal Image Gallery
+function onClick(element) {
+  document.getElementById("img01").src = element.src;
+  document.getElementById("modal01").style.display = "block";
+  var captionText = document.getElementById("caption");
+  captionText.innerHTML = element.alt;
+}
+</script>
+
+</body>
+</html>
