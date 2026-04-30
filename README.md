@@ -1,54 +1,51 @@
-# hmb-portfolio
-Portfolio de Benjamin Huruma
-Bienvenue sur mon Portfolio ou Site Personnel de Développeur Logiciel et Web !
-
+#hmb-portfolio
 Benjamin Huruma's Portfolio
-Welcome on my Portfolio or my Personal website of Software Developer !!
+Welcome to my Software and Web Developer Portfolio!
 
-# Huruma Musagara Benjamin
-### Junior Software Developer | Passionné par la Blockchain & Développement logiciel et Web
+#Huruma Musagara Benjamin
+### Junior Software Developer | Passionate about Blockchain & Software and Web Development
 
-Bienvenue sur mon profil GitHub ! Je suis un développeur logiciel en pleine ascension, actuellement en première année de Licence (L1) en Génie Logiciel** à l'ISIG Goma. 
-Mon approche est guidée par la rigueur technique, la logique et la volonté de créer des solutions numériques fiables et authentiques.
+Welcome to my GitHub profile! I am a rising software developer, currently in my first year of a Bachelor's degree (L1) in Software Engineering at ISIG Goma.
+My approach is guided by technical rigor, logic, and a desire to create reliable and authentic digital solutions.
 
----
+## Technical Skills
 
-## Compétences Techniques
+### Software & Web Development
+* Front-end: HTML5, CSS3 (W3.CSS), JavaScript.
 
-### Développement Logiciel & Web
-* Front-end : HTML5, CSS3 (W3.CSS), JavaScript.
-* Programmation : Python, C#.
-* Outils : Git/GitHub (CI/CD), VS Code, Pycharm, Photoshop (Maîtrise 80%).
+* Programming: Python, C#.
 
-### Spécialités & Intérêts
-* Blockchain & Web3 : Membre actif de l'écosystème Midnight Network et réviseur communautaire pour Cardano Catalyst.
-* Cybersécurité : Intérêt marqué pour la protection des données et les réseaux distribués.
-* Maitrise totale des outils bureautiques tels que la Suite office: Word, Excel et PowerPoint,...
-* Développement Desktop
+* Tools: Git/GitHub (CI/CD), VS Code, PyCharm, Photoshop (80% proficiency).
 
----
+### Specialties & Interests
+* Blockchain & Web3: Active member of the Midnight Network ecosystem and community reviewer for Cardano Catalyst.
 
-## Formation & Parcours
-* Licence 1 en Génie Logiciel :** ISIG-Goma, RDC (En cours).
-* Expérience : Opérateur de saisie et formateur technique chez Les Optiques World.
-* Langues : Français (Courant), Swahili (Maternel), Anglais (Technique).
+* Cybersecurity: Strong interest in data protection and distributed networks.
 
----
+* Proficient in office software such as Microsoft Office Suite: Word, Excel, and PowerPoint.
 
-## Projets & Contributions
-* Portfolio Personnel : Développement d'un site web responsive avec mode sombre/clair et intégration de flux de contact.
-* Midnight Network : Participation à des quêtes communautaires axées sur la confidentialité et le design d'agents numériques.
-* Cardano Catalyst : Analyse et révision de propositions de projets pour l'écosystème décentralisé Cardano via Catalyst.
+* Desktop Development
 
----
+## Education & Background
+* Bachelor's Degree in Software Engineering: ISIG-Goma, DRC (In progress).
 
-## Me contacter
-Je suis toujours ouvert aux échanges avec des passionnés de technologie ou pour des opportunités de projets innovants.
+* Experience: Data entry operator and technical trainer at Les Optiques World.
 
-* 📍 Localisation : Goma, Nord-Kivu, RDC
-* Email : benjaminhuruma@gmail.com
-* Téléphone : +243 981 082 394
-* 🔗 LinkedIn :** [Lien vers ton profil]
+* Languages: French (Fluent), Swahili (Native), English (Technical).
 
----
-« Construire et consolider progressivement des compétences avec rigueur pour transformer le monde grâce à l'informatique. »
+## Projects & Contributions
+* Personal Portfolio: Development of a responsive website with dark/light mode and contact flow integration.
+
+* Midnight Network: Participation in community quests focused on privacy and digital agent design.
+
+* Cardano Catalyst: Analysis and review of project proposals for the decentralized Cardano ecosystem using Catalyst.
+
+## Contact me
+I am always open to discussions with technology enthusiasts or for innovative project opportunities.
+
+* 📍 Location: Goma, North Kivu, DRC
+* Email: benjaminhuruma@gmail.com
+* Phone: +243 981 082 394
+* 🔗 LinkedIn: ** [Link to your profile]
+
+"Building and progressively consolidating skills with rigor to transform the world through the wonders of computing and new technologies."
