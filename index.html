@@ -10,7 +10,7 @@
 <title>Site de benjamin Huruma</title>
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
 
 
@@ -54,6 +54,20 @@ body.light-mode label {
   transition: 0.3s;
 }
 
+/* Style général pour le conteneur des icones */
+.social-links {
+    display: flex;
+    gap: 20px; /*Espacement entre les icones */
+    font-size: 30px; /*Taille des icones*/
+}
+/*Style de base pour toutes les icones*/
+.social-links a {
+    text-decoration: none;
+    color: #070707; /*Couleur grise par défaut*/
+    transition: all 0.3s ease;
+}
+
+
 </style>
 </head>
 <body>
@@ -70,9 +84,8 @@ body.light-mode label {
     <a href="#À propos" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">À propos</a> 
     <a href="#Formation" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Formation</a> 
     <a href="#Photos" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Photos</a> 
-    <a href="#Mes Compétences" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Mes Compétences</a>
+    <a href="#Compétences" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Compétences</a>
     <a href="#Mes réalisations" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Mes réalisations</a>    
-    <!--a href="#Un peu de musique" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Un peu de musique</a-->
     <a href="#Contactez-moi" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white">Contactez-moi</a>
   </div>
 </nav>
@@ -80,7 +93,7 @@ body.light-mode label {
 <!-- Top menu sur petit écran -->
 <header class="w3-container w3-top w3-hide-large w3-red w3-xlarge w3-padding">
   <a href="javascript:void(0)" class="w3-button w3-red w3-margin-right" onclick="w3_open()">☰</a>
-  <span>Portfolio de Benjamin</span>
+  <span>Portfolio de Benjamin Huruma</span>
 </header>
 
 <!-- Overlay effect when opening sidebar on small screens -->
@@ -119,8 +132,10 @@ body.light-mode label {
     <p>Je suis Huruma Musagara Benjamin, jeune Développeur logiciel junior passioné par la programmation et révant d'un monde meilleur grâce à l'Informatique et nouvelles technologies en unissant nos éfforts !</p> 
     <P>Oui, grâce aux multiples avantages de l'informatique et des nouvelles technologies dans divers domaines et surtout à leur utilisation etiquement responsable, nous pouvons considérablement améliorer nos conditions de vie. 
     </P>
-    <p>Développeur junior oui, je construit et consolide progressivement mes compétences avec une approche rigoureuse axée sur la logique, le réalisme technique et la qualité du travail. Je m'interesse particulièrement au développement web, aux sysytèmes distribués ou blockchains, la cybersécurité et à l'informatique tout court, avec une volonté claire de comprendre, utiliser et transformer.
-    J'aborde chaque projet comme une opportunité d'apprentissage concret, en prviligiant des solutions durables, fonctionnelles. Mon objectif est de développer des applications fiables, cohérentes et utilses à la comunauté,...
+    <p>
+      Je m'interesse particulièrement au développement web, aux sysytèmes distribués ou blockchains, la cybersécurité et à l'informatique tout court, avec une volonté claire de comprendre, utiliser et transformer.
+      J'aborde chaque projet comme une opportunité d'apprentissage concret, en prviligiant des solutions durables, fonctionnelles. 
+      Mon objectif est de développer des applications fiables, cohérentes et utilses à la comunauté,...
     </p>
   </div>
   
@@ -128,15 +143,12 @@ body.light-mode label {
   <div class="w3-container" id="Formation" style="margin-top:75px">
     <h1 class="w3-xxxlarge w3-text-red"><b>Formation</b></h1>
     <hr style="width:50px;border:5px solid red" class="w3-round">
-    <p>Ma formation demarre commence en 2011 à l'école Primaire SEBYERA; et en 2018 je termine mes études primaires et j'obtient un Certificat de fin d'études primaires.</p>
-    <p>Et ensuite en septembre 2018 jusqu'en Juillet 2024; j'ai fais mon cursus sécondaire et j'ai obtenu un Diplome d'Etat en secrétariat-Administration.</p>
-    <p>Et maintenant je suis à l'ISIG Goma pour mes études supérieurs en première année de licence dans le domaine de Sciences et technologies, filière Sciences informatiques et mention Génie logiciel</p>
-    <p>Avec mon amour pour l'Informatique, Je suis encore qu'à l'école secondaire où l'on avait du mal avec le cours qui nécessité la pratique comme l'Informatique malgré un temps de pratique, on manqué l'outil pour pratiquer à la maison, et c'est là que je trouve l'opportunité, un petit poste d'opérateur de saisie stagiaire dans le secrétariat Les Optique, c'est là que je suis entrer réelement en contact avec l'outil principal de ma passion, l'ordinateur, depuis ce jours-là je ne cesse d'apprendre du jour le jour</p>
-    <p>C'est dans cet esprit que je choisi de m'orienter vers l'ISIG-Goma pour y faire mes études supérieures en Informatique, orientation Génie logiciel bien évidemment !
-    Et mon université commence à contribuer significativement à mon apprentissage à nous montrant le chemins vers des nouvelles connaissance, les compétence utile.</p>
-    <p>Pour des informations plus complète voici mon curriculum vitae, téléchargé-le simplement via ce bouton ci-dessous 
-    </p>
-    <a href="./CURRICULUM VITAE.pdf" target="./CURRICULUM VITAE.pdf" class="w3-button w3-block w3-padding-large w3-red w3-margin-bottom" style="color: red; width: 300px; height: 70px;"><h3><b>Télécharger mon CV</b></h3></a>
+    <p>Ma formation:
+       De septembre 2011 jusqu'en Juillet 2024; j'ai fais mon cursus primaire - sécondaire à l'école primaire et secondaire Sebyera; et j'ai obtenu un Diplome d'Etat en secrétariat-Administration.</p>
+    <p>Et de Octobre 2025 jusqu'à maitenant; je suis entrain de faire mon cursus universitaire à l'ISIG Goma; dans le Departement Informatique et orientation Génie logiciel</p>
+    <p>J'avance lentement mais surement !!</p>
+    <p>Pour des informations plus complètes et précisent sur ma personne voici mon curriculum vitae, téléchargé-le simplement via ce bouton ci-dessous</p> 
+    <a href="./CURRICULUM VITAE.pdf" target="_blank" class="w3-button w3-block w3-padding-large w3-red w3-margin-bottom" style="color: red; width: 300px; height: 70px;"><h3><b>Télécharger mon CV</b></h3></a>
     
   </div>
 
@@ -158,7 +170,7 @@ body.light-mode label {
 
   <!-- MES COMPETENCES -->
   <div class="w3-container" id="Compétences" style="margin-top:75px">
-    <h1 class="w3-xxxlarge w3-text-red"><b>Mes Compétences</b></h1>
+    <h1 class="w3-xxxlarge w3-text-red"><b>Compétences</b></h1>
     <hr style="width:50px;border:5px solid red" class="w3-round">
     <p>Engagé dans une progression constante, je travail à transformer mes connaissances en compétences solides, avec l'ambition de devenir un dévelopeur compétent, autonome et capable de répondre efficacement à des problématiques réelles.</p>
   </div>
@@ -188,20 +200,24 @@ body.light-mode label {
   <div class="w3-container" id="Mes réalisations" style="margin-top:75px">
     <h1 class="w3-xxxlarge w3-text-red"><b>Mes réalisations</b></h1>
     <hr style="width:50px;border:5px solid red" class="w3-round">
-    <p>Au fil des ans, mise à part mon poste de Opérateur de saisie, Formateur et Imprimeur chez LES OPTIQUES WORLD (jusqu'à maitenant); je me suis aussi orienté vers le monde de la blockcahin, précisement vers mi-2025. </p>
-      <p>Et j'ai eu l'honneur et le privilège d'avoir de très bon mentors Martin Musagara (voir Gomahub via @GOMA_Drep sur X.com) pour me guider à tavers ce monde complexe et vaste qui est celle du Web3</p>
-      <p>Très vite (Juillet 2025) j'ai eu la chance de participer activement dans le programme de Réviseur communautaire de Catalyst dans l'écosystème Cardano (voir <u><B>https://cardano.org/</B></u>) deux fois.</p>
-      Mais aussi je suis aussi memebre actif dans l'écosystème Midnight (une blockchain de quatrième géneration, voir <b><U>https://midnight.network/</U></b> ) 
-      </p>
-      <p>Voici en images quelques certificats de la Blockchain Midnight :</p>
-    </p>
+    <p>Au fil des ans: </p>
+    <p>Depuis 2021 jusqu'à maitenant: Opérateur de saisie, Formateur et Imprimeur chez LES OPTIQUES WORLD </p>
+    <P>Je me suis aussi orienté vers le monde de la blockcahin:</P>
+      <div>
+        <p>En 2025: J'ai participer deux fois dans le programme de Réviseur communautaire de Catalyst dans l'écosystème Cardano voir <u><B> <a href="https://cardano.org/" target="_blank">Cardano</a></B></u></p>
+        <p>Depuis 2025 jusqu'à maitenant: je suis membre actif dans l'écosystème Midnight: une blockchain de quatrième géneration, voir <b><U> <a href="https://midnight.network/" target="_blank">Midnight Network</a></U></b> </p> 
+        <p>Depuis 2025 jusqu'à maitenant: Je suis membre actif dans l'écosystème Safrochain, voir <b><U> <a href="https://safrochain.com/" target="_blank">Safrochain</a></U></b></p>
+      </div>
+    
+    <p>Voici en images quelques certificats de la Blockchain Midnight :</p>
+  
     <div class="w3-row-padding">
       <div class="w3-half">
-        <img src="./certificatMidnight1.WebP" style="width:100%;" onclick="onClick(this)" alt="Certificat de Benjamin 1">
+        <img src="./certificatMidnight1.WebP" style="width:100%;" onclick="onClick(this)" alt="Certificat de Benjamin Huruma">
 
       </div>
       <div class="w3-half">
-        <img src="./CertificatMidnight2.WebP" style="width:100%;" onclick="onClick(this)" alt="Certificat de Benjamin 2">
+        <img src="./CertificatMidnight2.WebP" style="width:100%;" onclick="onClick(this)" alt="Certificat de Benjamin Huruma">
 
       </div>
 
@@ -209,19 +225,6 @@ body.light-mode label {
  
   </div>
 
-  <!-- UN PEU DE MUSIQUE
-
-  <div class="w3-container" id="Un peu de musique" style="margin-top:75px">
-    <h1 class="w3-xxxlarge w3-text-red"><b>Un peu de musique</b></h1>
-    <hr style="width:50px;border:5px solid red" class="w3-round">
-    <p>Un cadeau pour vous, très chèr(e) visiteur de mon site !
-      Un excellente chanson vidéo de Petits chanteurs et un audio génial !!!
-    </p>
-    <video src="./../media/videos/Humilite_de_Dieu.mp4" width="600" height="400" controls></video>
-    <br>
-    <audio src="./../media/audios/What_A_Beautiful_name.mp3" controls></audio>
-  </div>
-  -->
   <!-- CONTACTEZ-MOI -->
   <div class="w3-container" id="Contactez-moi" style="margin-top:75px">
     <h1 class="w3-xxxlarge w3-text-red"><b>Contactez-moi</b></h1>
@@ -243,7 +246,8 @@ body.light-mode label {
       <button type="submit" class="w3-button w3-block w3-padding-large w3-red w3-margin-bottom">Envoyer votre Message</button>
       <br>
       <br>
-      <a href="#Accueil" class="w3-button w3-block w3-padding-large w3-red w3-margin-bottom"></i>Revenir à l'accueil</a>
+      <br>
+      <a href="#Accueil" class="w3-button w3-block w3-padding-large w3-red w3-margin-bottom" style="color: red; font-size: 25px; width: 300px; height: 55px; text-align: center"></i>Revenir à l'accueil</a>
     </form>  
   </div>
 
@@ -254,27 +258,24 @@ body.light-mode label {
 
 <footer class="w3-center w3-black w3-padding-64">
   
-  <div class="w3-light-grey w3-container w3-padding-32" style="margin-top:55px;">
+  <div class="w3-light-grey w3-container w3-padding-32" style="margin-top:30px;">
     
-    <p class="w3-large"><b>Suivez-moi </b></p>
-    
-    <div class="w3-xlarge w3-margin-bottom">
-      <a href="#" target="_blank" class="w3-hover-opacity" style="color: black; margin: 0 10px; text-decoration: none;"><i class="fa fa-linkedin"></i></a>
-      <a href="#" target="_blank" class="w3-hover-opacity" style="color: black; margin: 0 10px; text-decoration: none;"><i class="fa fa-facebook-official"></i></a>
-      <a href="#" target="_blank" class="w3-hover-opacity" style="color: black; margin: 0 10px; text-decoration: none;"><i class="fa fa-twitter"></i></a>  
+    <p class="w3-large"><b>Retrouvez-moi: </b></p>
+
+    <div style="display: flex; justify-content: center; align-items: center;">
+      <div class="social-links">
+        <a href="https://www.linkedin.com/in/benjamin-huruma-6a893539b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank" class="w3-hover-opacity" margin: 0 10px; text-decoration: none;><i class="fa-brands fa-linkedin"></i></a>
+        <a href="https://www.facebook.com/share/1AzuL1QKyJ/?mibextid=wwXIfr" target="_blank" class="w3-hover-opacity" margin: 0 10px; text-decoration: none;><i class="fa-brands fa-facebook"></i></a>
+        <a href="https://x.com/ben_huruma?s=21" target="_blank" class="w3-hover-opacity" margin: 0 10px; text-decoration: none;><i class="fa-brands fa-x-twitter"></i></a>
+        <a href="https://github.com/BenHuruma" target="_blank" class="w3-hover-opacity" margin: 0 10px; text-decoration: none;><i class="fa-brands fa-github"></i></a>
+        <a href="https://wa.me/243981082394" target="_blank" class="w3-hover-opacity" margin: 0 10px; text-decoration: none;><i class="fa-brands fa-whatsapp"></i></a>   
+      </div>
     </div>
-    <br>
-
-    <p>Created by <a href="#" target="_blank" class="w3-hover-opacity" style="color: black;"><b>Benjamin Huruma</b></a></p>
+    <p style="text-align:right">Created by <a href="https://github.com/BenHuruma" target="https://github.com/BenHuruma" class="w3-hover-opacity" style="color: black;"><b>Benjamin Huruma</b></a></p>
   </div>
-
-  <br>
-  <center>
-    Vous pouvez aussi me contacter par : +243 981 082 394 ou via <b><u>benjaminhuruma@gmail.com</u></b>
-    Goma / RDC
-  </center>
+  <center><hr>Benjamin Huruma -- <b><u>benjaminhuruma@gmail.com</u></b></center>
+  <center> Basé à Goma / RDC</center>
 </footer>
-
 
 <script>
 
@@ -287,7 +288,7 @@ themeToggleBtn.addEventListener("click", function() {
   
   // Change l'icône en fonction du mode
   if (document.body.classList.contains("light-mode")) {
-    themeToggleBtn.innerHTML = "🌙"; // Affiche la lune si on est en mode clair
+    themeToggleBtn.innerHTML = "🌙";  // Affiche la lune si on est en mode clair
   } else {
     themeToggleBtn.innerHTML = "☀️"; // Affiche le soleil si on est en mode sombre
   }
