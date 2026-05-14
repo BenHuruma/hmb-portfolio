@@ -46,6 +46,6 @@ I am always open to discussions with technology enthusiasts or for innovative pr
 * 📍 Location: Goma, North Kivu, DRC
 * Email: benjaminhuruma@gmail.com
 * Phone: +243 981 082 394
-* 🔗 LinkedIn: ** [Link to your profile]
+* 🔗 LinkedIn: https://www.linkedin.com/in/benjamin-huruma-6a893539b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app
 
 "Building and progressively consolidating skills with rigor to transform the world through the wonders of computing and new technologies."
