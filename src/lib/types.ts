@@ -1,7 +1,4 @@
 export interface SiteSettings {
-  cv_url: string
-  cv_file_url: string
-  cv_source: 'drive' | 'upload'
   hero_name: string
   hero_subtitle: string
   hero_status: string

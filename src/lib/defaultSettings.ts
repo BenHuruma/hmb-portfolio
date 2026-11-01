@@ -2,9 +2,6 @@ import type { SiteSettings } from './types'
 
 /** Static content keeps the public portfolio available without Supabase. */
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
-  cv_url: 'https://docs.google.com/document/d/1EOIh9wNgKYaMSbg86QWllAPNDgXcjEuU/edit?usp=drivesdk&ouid=112920642265533580795&rtpof=true&sd=true',
-  cv_file_url: '',
-  cv_source: 'drive',
   hero_name: 'Benjamin Huruma',
   hero_subtitle: 'Développeur Web & Ingénieur Logiciel, passionné par la blockchain, la cybersécurité et la création de solutions numériques durables.',
   hero_status: 'Disponible pour des opportunités',

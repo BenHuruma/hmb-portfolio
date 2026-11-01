@@ -7,7 +7,7 @@ Portfolio personnel présentant mon profil, mes compétences, ma formation, mes 
 - Site responsive avec thèmes clair et sombre.
 - Sections profil, compétences, formation, réalisations et contact.
 - Traduction à la demande avec Google Translate.
-- Espace d’administration pour modifier le contenu et gérer le CV.
+- Espace d’administration pour modifier le contenu du portfolio.
 - Contenu public de secours intégré : le site reste consultable sans Supabase.
 
 ## Technologies

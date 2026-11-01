@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useReveal } from '../hooks/useReveal'
+import { sortAchievementsNewestFirst } from '../lib/achievements'
 import type { SiteSettings } from '../lib/types'
 
 interface WorkProps {
@@ -32,7 +33,7 @@ export function Work({ settings }: WorkProps) {
         </div>
 
         <div className={`work__grid ${visible ? 'reveal visible' : 'reveal'}`}>
-          {settings.achievements.map((item, i) => (
+          {sortAchievementsNewestFirst(settings.achievements).map((item, i) => (
             <article key={i} className="work__card">
               <div className="work__card-top">
                 <span className="work__icon"><i className={ICONS[item.title] || 'fa-solid fa-cube'}></i></span>

@@ -1,5 +1,4 @@
 import { useReveal } from '../hooks/useReveal'
-import { getCvDownloadUrl } from '../lib/settings'
 import type { SiteSettings } from '../lib/types'
 
 interface EducationProps {
@@ -40,12 +39,6 @@ export function Education({ settings }: EducationProps) {
           ))}
         </div>
 
-        <div className={`education__cv ${visible ? 'reveal visible' : 'reveal'}`}>
-          <a href={getCvDownloadUrl(settings)} target="_blank" rel="noopener noreferrer" className="education__cv-btn">
-            <i className="fa-solid fa-file-arrow-down"></i>
-            Télécharger mon CV complet
-          </a>
-        </div>
       </div>
       <style>{`
         .education__timeline { margin-top: 48px; display: flex; flex-direction: column; gap: 0; position: relative; }
@@ -59,9 +52,6 @@ export function Education({ settings }: EducationProps) {
         .education__title { font-size: 1.0625rem; font-weight: 600; color: var(--color-text); margin-bottom: 4px; }
         .education__place { font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 12px; }
         .education__desc { font-size: 0.875rem; color: var(--color-text-secondary); line-height: 1.7; }
-        .education__cv { margin-top: 48px; display: flex; justify-content: center; }
-        .education__cv-btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: var(--radius-md); background: var(--color-accent); color: #fff; font-size: 0.9375rem; font-weight: 500; transition: all var(--transition); }
-        .education__cv-btn:hover { background: var(--color-accent-hover); color: #fff; transform: translateY(-2px); box-shadow: var(--shadow-glow); }
         @media (max-width: 480px) {
           .education__item { grid-template-columns: 40px 1fr; gap: 16px; }
           .education__marker { width: 40px; height: 40px; font-size: 0.875rem; }

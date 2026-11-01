@@ -1,5 +1,4 @@
 import { useReveal } from '../hooks/useReveal'
-import { getCvDownloadUrl } from '../lib/settings'
 import type { SiteSettings } from '../lib/types'
 
 interface HeroProps {
@@ -31,15 +30,6 @@ export function Hero({ settings }: HeroProps) {
             >
               Me contacter
               <i className="fa-solid fa-arrow-right"></i>
-            </a>
-            <a
-              href={getCvDownloadUrl(settings)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hero__btn hero__btn--ghost"
-            >
-              <i className="fa-solid fa-file-lines"></i>
-              Télécharger mon CV
             </a>
           </div>
           <div className="hero__socials">

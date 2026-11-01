@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useSettings } from '../hooks/useSettings'
-import { updateSettings, uploadCvFile } from '../lib/settings'
+import { updateSettings } from '../lib/settings'
 import { verifySudoPassword } from '../lib/auth'
+import { sortAchievementsWithSourceIndex } from '../lib/achievements'
 import type { SiteSettings, EducationItem, Achievement } from '../lib/types'
 
 export function AdminDashboard() {
@@ -14,13 +15,10 @@ export function AdminDashboard() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [cvUploading, setCvUploading] = useState(false)
-  const [cvUploadError, setCvUploadError] = useState<string | null>(null)
   const [sudoOpen, setSudoOpen] = useState(false)
   const [sudoPassword, setSudoPassword] = useState('')
   const [sudoError, setSudoError] = useState<string | null>(null)
   const [sudoVerifying, setSudoVerifying] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (settings) setForm({ ...settings })
@@ -78,30 +76,7 @@ export function AdminDashboard() {
     }
   }
 
-  const handleCvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setCvUploading(true)
-    setCvUploadError(null)
-    try {
-      const publicUrl = await uploadCvFile(file)
-      update('cv_file_url', publicUrl)
-      update('cv_source', 'upload')
-    } catch (err) {
-      const code = err instanceof Error ? err.message : ''
-      if (code === 'format') {
-        setCvUploadError('Format non autorisé. Seuls les fichiers PDF, DOC et DOCX sont acceptés.')
-      } else if (code === 'size') {
-        setCvUploadError('Le fichier dépasse 10 Mo. Choisissez un fichier plus léger.')
-      } else {
-        setCvUploadError('Échec du téléversement. Réessayez.')
-      }
-      console.error('cv upload failed', err)
-    } finally {
-      setCvUploading(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-    }
-  }
+  const sortedAchievements = form ? sortAchievementsWithSourceIndex(form.achievements) : []
 
   if (loading || !form) {
     return (
@@ -136,57 +111,7 @@ export function AdminDashboard() {
 
       <main className="admin__main">
         <div className="admin__content">
-          {/* CV + Photos */}
-          <section className="admin__section">
-            <h2 className="admin__section-title"><i className="fa-solid fa-file-lines"></i> Curriculum vitae (CV)</h2>
-            <div className="admin__cv-source-toggle">
-              <button
-                type="button"
-                className={form.cv_source === 'drive' ? 'admin__cv-tab admin__cv-tab--active' : 'admin__cv-tab'}
-                onClick={() => update('cv_source', 'drive')}
-              >
-                <i className="fa-brands fa-google-drive"></i> Lien Google Drive
-              </button>
-              <button
-                type="button"
-                className={form.cv_source === 'upload' ? 'admin__cv-tab admin__cv-tab--active' : 'admin__cv-tab'}
-                onClick={() => update('cv_source', 'upload')}
-              >
-                <i className="fa-solid fa-upload"></i> Fichier téléversé
-              </button>
-            </div>
-
-            {form.cv_source === 'drive' ? (
-              <>
-                <div className="admin__field">
-                  <label>Lien du CV (Google Drive)</label>
-                  <input className="admin__input" type="url" value={form.cv_url} onChange={(e) => update('cv_url', e.target.value)} placeholder="https://docs.google.com/document/d/..." />
-                </div>
-                <p className="admin__section-hint">Le lien Google Drive sera automatiquement converti en téléchargement PDF pour les visiteurs.</p>
-              </>
-            ) : (
-              <>
-                <div className="admin__field">
-                  <label>Téléverser un CV depuis votre appareil</label>
-                  <div className="admin__upload-zone">
-                    <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" onChange={handleCvUpload} className="admin__file-input" />
-                    <button type="button" onClick={() => fileInputRef.current?.click()} className="admin__upload-btn" disabled={cvUploading}>
-                      {cvUploading ? (<><i className="fa-solid fa-spinner fa-spin"></i> Téléversement...</>) : (<><i className="fa-solid fa-cloud-arrow-up"></i> Choisir un fichier</>)}
-                    </button>
-                    {form.cv_file_url && (
-                      <p className="admin__upload-status">
-                        <i className="fa-solid fa-circle-check"></i> Fichier enregistré — les visiteurs le téléchargeront automatiquement.
-                      </p>
-                    )}
-                  </div>
-                </div>
-                {cvUploadError && <div className="admin__upload-error"><i className="fa-solid fa-circle-exclamation"></i> {cvUploadError}</div>}
-                <p className="admin__section-hint">Formats acceptés : PDF, DOC, DOCX. Le fichier remplace le précédent à chaque téléversement.</p>
-              </>
-            )}
-            <p className="admin__section-hint">Source active : {form.cv_source === 'drive' ? 'Google Drive' : 'Fichier téléversé'}. Cliquez sur « Enregistrer les modifications » pour appliquer le changement.</p>
-          </section>
-
+          {/* Photo */}
           <section className="admin__section">
             <h2 className="admin__section-title"><i className="fa-solid fa-image"></i> Photo d'accueil</h2>
             <div className="admin__field">
@@ -312,12 +237,24 @@ export function AdminDashboard() {
           {/* Achievements */}
           <section className="admin__section">
             <h2 className="admin__section-title"><i className="fa-solid fa-trophy"></i> Réalisations</h2>
-            {form.achievements.map((item, i) => (
+            <button type="button" onClick={() => {
+              const newItem: Achievement = {
+                year: String(new Date().getFullYear()),
+                title: '',
+                description: '',
+                link_label: '',
+                link_url: '',
+              }
+              update('achievements', [newItem, ...form.achievements])
+            }} className="admin__add-btn admin__add-btn--top">
+              <i className="fa-solid fa-plus"></i> Ajouter une réalisation
+            </button>
+            {sortedAchievements.map(({ item, index }, i) => (
               <div key={i} className="admin__sub-card">
                 <div className="admin__sub-card-header">
-                  <span>Réalisation {i + 1}</span>
+                  <span>Réalisation {i + 1} — {item.year || 'Année non précisée'}</span>
                   <button onClick={() => {
-                    const items = form.achievements.filter((_, idx) => idx !== i)
+                    const items = form.achievements.filter((_, idx) => idx !== index)
                     update('achievements', items)
                   }} className="admin__remove-btn"><i className="fa-solid fa-trash"></i></button>
                 </div>
@@ -325,7 +262,7 @@ export function AdminDashboard() {
                   <label>Année</label>
                   <input className="admin__input" type="text" value={item.year} onChange={(e) => {
                     const items = [...form.achievements]
-                    items[i] = { ...items[i], year: e.target.value }
+                    items[index] = { ...items[index], year: e.target.value }
                     update('achievements', items)
                   }} />
                 </div>
@@ -333,7 +270,7 @@ export function AdminDashboard() {
                   <label>Titre</label>
                   <input className="admin__input" type="text" value={item.title} onChange={(e) => {
                     const items = [...form.achievements]
-                    items[i] = { ...items[i], title: e.target.value }
+                    items[index] = { ...items[index], title: e.target.value }
                     update('achievements', items)
                   }} />
                 </div>
@@ -341,7 +278,7 @@ export function AdminDashboard() {
                   <label>Description</label>
                   <textarea className="admin__textarea" rows={2} value={item.description} onChange={(e) => {
                     const items = [...form.achievements]
-                    items[i] = { ...items[i], description: e.target.value }
+                    items[index] = { ...items[index], description: e.target.value }
                     update('achievements', items)
                   }} />
                 </div>
@@ -350,7 +287,7 @@ export function AdminDashboard() {
                     <label>Texte du lien</label>
                     <input className="admin__input" type="text" value={item.link_label} onChange={(e) => {
                       const items = [...form.achievements]
-                      items[i] = { ...items[i], link_label: e.target.value }
+                      items[index] = { ...items[index], link_label: e.target.value }
                       update('achievements', items)
                     }} />
                   </div>
@@ -358,19 +295,13 @@ export function AdminDashboard() {
                     <label>URL du lien</label>
                     <input className="admin__input" type="url" value={item.link_url} onChange={(e) => {
                       const items = [...form.achievements]
-                      items[i] = { ...items[i], link_url: e.target.value }
+                      items[index] = { ...items[index], link_url: e.target.value }
                       update('achievements', items)
                     }} />
                   </div>
                 </div>
               </div>
             ))}
-            <button onClick={() => {
-              const newItem: Achievement = { year: '', title: '', description: '', link_label: '', link_url: '' }
-              update('achievements', [...form.achievements, newItem])
-            }} className="admin__add-btn">
-              <i className="fa-solid fa-plus"></i> Ajouter une réalisation
-            </button>
           </section>
 
           {/* Contact */}
@@ -493,18 +424,8 @@ export function AdminDashboard() {
         .admin__remove-btn { color: var(--color-error); font-size: 0.875rem; transition: opacity var(--transition); }
         .admin__remove-btn:hover { opacity: 0.7; }
         .admin__add-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: var(--radius-sm); border: 1px dashed var(--color-border); color: var(--color-text-secondary); font-size: 0.8125rem; transition: all var(--transition); }
+        .admin__add-btn--top { margin-bottom: 16px; }
         .admin__add-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
-        .admin__cv-source-toggle { display: flex; gap: 8px; margin-bottom: 20px; padding: 4px; background: var(--color-bg); border: 1px solid var(--color-border-soft); border-radius: var(--radius-md); }
-        .admin__cv-tab { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 500; color: var(--color-text-secondary); transition: all var(--transition); }
-        .admin__cv-tab--active { background: var(--color-accent); color: #fff; }
-        .admin__cv-tab:not(.admin__cv-tab--active):hover { color: var(--color-text); background: var(--color-surface); }
-        .admin__upload-zone { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 24px; border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); }
-        .admin__file-input { display: none; }
-        .admin__upload-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; border-radius: var(--radius-sm); background: var(--color-accent); color: #fff; font-size: 0.875rem; font-weight: 500; transition: all var(--transition); }
-        .admin__upload-btn:hover:not(:disabled) { background: var(--color-accent-hover); transform: translateY(-1px); }
-        .admin__upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .admin__upload-status { font-size: 0.8125rem; color: var(--color-success); display: flex; align-items: center; gap: 6px; }
-        .admin__upload-error { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: var(--radius-sm); background: rgba(239,68,68,0.1); color: var(--color-error); font-size: 0.8125rem; margin-bottom: 16px; }
         .admin__save-bar { position: sticky; bottom: 24px; display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 16px 24px; background: var(--color-bg-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
         .admin__saved { font-size: 0.8125rem; color: var(--color-success); display: flex; align-items: center; gap: 6px; }
         .admin__save-error { font-size: 0.8125rem; color: var(--color-error); display: flex; align-items: center; gap: 6px; }
