@@ -67,15 +67,12 @@ export async function verifySudoPassword(password: string): Promise<AuthResult> 
   }
   const { error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) {
-    return { success: false, error: 'Mot de passe incorrect' }
+    return { success: false, error: 'Mot de passe Supabase incorrect. Le mot de passe Google ou GitHub ne peut pas être utilisé ici.' }
   }
   return { success: true }
 }
 
-/**
- * Request a password reset: sends a 6-digit OTP code to the email via
- * Supabase's built-in email service. does not reveal whether the email exists.
- */
+/** Send a Supabase password-recovery link back to the admin page. */
 export async function requestPasswordReset(email: string): Promise<AuthResult> {
   if (!isSupabaseConfigured) {
     return { success: false, error: 'La récupération du mot de passe nécessite une configuration Supabase.' }
@@ -83,34 +80,12 @@ export async function requestPasswordReset(email: string): Promise<AuthResult> {
   if (!email) {
     return { success: false, error: 'Email requis' }
   }
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { shouldCreateUser: false },
+  const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}admin?flow=reset`
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo,
   })
   if (error) {
     return { success: false, error: "Envoi impossible. Réessayez." }
-  }
-  return { success: true }
-}
-
-/**
- * Verify the 6-digit reset code. On success the user gets a temporary session
- * and can set a new password.
- */
-export async function verifyResetCode(email: string, code: string): Promise<AuthResult> {
-  if (!isSupabaseConfigured) {
-    return { success: false, error: 'La récupération du mot de passe nécessite une configuration Supabase.' }
-  }
-  if (!email || !code) {
-    return { success: false, error: 'Email et code requis' }
-  }
-  const { error } = await supabase.auth.verifyOtp({
-    email,
-    token: code,
-    type: 'email',
-  })
-  if (error) {
-    return { success: false, error: 'Code incorrect ou expiré' }
   }
   return { success: true }
 }

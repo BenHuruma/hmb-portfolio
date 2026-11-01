@@ -429,7 +429,7 @@ export function AdminDashboard() {
               <span className="sudo-icon"><i className="fa-solid fa-shield-halved"></i></span>
               <div>
                 <h3 className="sudo-title">Vérification administrateur</h3>
-                <p className="sudo-subtitle">Confirmez votre mot de passe pour enregistrer les modifications.</p>
+                <p className="sudo-subtitle">Entrez votre mot de passe Supabase. Le mot de passe de votre compte Google ou GitHub ne fonctionne pas ici. Si vous n’avez pas de mot de passe Supabase, déconnectez-vous puis utilisez « Mot de passe oublié ? » sur la page de connexion pour en définir un.</p>
               </div>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="sudo-form">

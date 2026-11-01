@@ -1,25 +1,25 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import {
   signInWithEmail,
   signInWithGoogle,
   signInWithGitHub,
   requestPasswordReset,
-  verifyResetCode,
   updatePassword,
 } from '../lib/auth'
 import { useAuth } from '../hooks/useAuth'
 
 type Mode = 'signin' | 'forgot'
-type ForgotStep = 'email' | 'code' | 'password'
+type ForgotStep = 'email' | 'password'
 
 export function LoginPage() {
-  const [mode, setMode] = useState<Mode>('signin')
-  const [forgotStep, setForgotStep] = useState<ForgotStep>('email')
+  const location = useLocation()
+  const passwordResetRedirect = new URLSearchParams(location.search).get('flow') === 'reset'
+  const [mode, setMode] = useState<Mode>(passwordResetRedirect ? 'forgot' : 'signin')
+  const [forgotStep, setForgotStep] = useState<ForgotStep>(passwordResetRedirect ? 'password' : 'email')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [resetCode, setResetCode] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [forgotEmail, setForgotEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -30,10 +30,29 @@ export function LoginPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin && !(mode === 'forgot' && forgotStep === 'password')) {
       navigate('/admin/dashboard')
     }
-  }, [isAdmin, navigate])
+  }, [isAdmin, mode, forgotStep, navigate])
+
+  useEffect(() => {
+    if (passwordResetRedirect) {
+      setMode('forgot')
+      setForgotStep('password')
+      setInfo('Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.')
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setMode('forgot')
+        setForgotStep('password')
+        setError(null)
+        setInfo('Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.')
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [passwordResetRedirect])
 
   useEffect(() => {
     if (mode === 'signin' && !authLoading && isAuthenticated && !isAdmin) {
@@ -72,24 +91,9 @@ export function LoginPage() {
     setLoading(true)
     const result = await requestPasswordReset(forgotEmail)
     if (result.success) {
-      setInfo('Si cette adresse est enregistrée, un code à 6 chiffres a été envoyé.')
-      setForgotStep('code')
+      setInfo('Si cette adresse correspond à un compte, un lien de réinitialisation a été envoyé. Ouvrez-le sur le même navigateur pour définir un nouveau mot de passe.')
     } else {
       setError(result.error || 'Envoi impossible')
-    }
-    setLoading(false)
-  }
-
-  const handleForgotCode = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
-    const result = await verifyResetCode(forgotEmail, resetCode)
-    if (result.success) {
-      setForgotStep('password')
-      setInfo(null)
-    } else {
-      setError(result.error || 'Code incorrect')
     }
     setLoading(false)
   }
@@ -100,12 +104,13 @@ export function LoginPage() {
     setLoading(true)
     const result = await updatePassword(newPassword)
     if (result.success) {
+      await supabase.auth.signOut()
       setInfo('Mot de passe mis à jour. Connectez-vous avec votre nouveau mot de passe.')
       setMode('signin')
       setForgotStep('email')
       setForgotEmail('')
-      setResetCode('')
       setNewPassword('')
+      navigate('/admin', { replace: true })
     } else {
       setError(result.error || 'Mise à jour impossible')
     }
@@ -137,6 +142,7 @@ export function LoginPage() {
     setForgotStep('email')
     setError(null)
     setInfo(null)
+    if (passwordResetRedirect) navigate('/admin', { replace: true })
   }
 
   return (
@@ -176,32 +182,7 @@ export function LoginPage() {
                 {info && <div className="login-info"><i className="fa-solid fa-circle-info"></i> {info}</div>}
                 {error && <div className="login-error"><i className="fa-solid fa-circle-exclamation"></i> {error}</div>}
                 <button type="submit" className="login-submit" disabled={loading}>
-                  {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Envoi...</> : <><i className="fa-solid fa-paper-plane"></i> Envoyer le code</>}
-                </button>
-              </form>
-            )}
-
-            {forgotStep === 'code' && (
-              <form className="login-form" onSubmit={handleForgotCode}>
-                <p className="login-step-hint">Un code à 6 chiffres a été envoyé à <strong>{forgotEmail}</strong>.</p>
-                <div className="login-field">
-                  <label htmlFor="reset-code">Code à 6 chiffres</label>
-                  <input
-                    id="reset-code"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]{6}"
-                    maxLength={6}
-                    value={resetCode}
-                    onChange={(e) => setResetCode(e.target.value.replace(/[^0-9]/g, ''))}
-                    required
-                    autoFocus
-                    placeholder="123456"
-                  />
-                </div>
-                {error && <div className="login-error"><i className="fa-solid fa-circle-exclamation"></i> {error}</div>}
-                <button type="submit" className="login-submit" disabled={loading}>
-                  {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Vérification...</> : <><i className="fa-solid fa-check"></i> Vérifier le code</>}
+                  {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Envoi...</> : <><i className="fa-solid fa-paper-plane"></i> Envoyer le lien</>}
                 </button>
               </form>
             )}
