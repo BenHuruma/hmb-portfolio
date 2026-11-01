@@ -53,11 +53,34 @@ Le workflow `.github/workflows/deploy-pages.yml` construit et publie automatique
 
 1. Poussez le dépôt sur GitHub.
 2. Dans **Settings → Pages**, choisissez **GitHub Actions** comme source de publication.
-3. Le workflow publie le site à `https://benhuruma.github.io/Myportfolio-2.0/` après son premier passage réussi.
+3. Le workflow publie le site à `https://benhuruma.github.io/hmb-portfolio/` après son premier passage réussi.
 
 Le chemin du dépôt, les images locales, les routes admin et leur rechargement sont configurés pour GitHub Pages. Le workflow ajoute une page de repli pour React Router. Aucun coût d’hébergement ni secret Supabase n’est requis pour publier le portfolio public. Le bouton de traduction utilise un service Google tiers : Internet est requis, et le texte visible de la page est transmis à Google pour traduction.
 
-Pour activer Supabase en production, ajoutez `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` dans **Settings → Secrets and variables → Actions** comme secrets du dépôt. Dans Supabase Auth, ajoutez `https://benhuruma.github.io/Myportfolio-2.0/` à l’URL du site et aux URL de redirection autorisées (ainsi que les fournisseurs OAuth choisis). La clé anon/publishable est visible dans le JavaScript livré au navigateur ; ne configurez jamais `service_role` comme variable `VITE_*`.
+Pour activer Supabase en production, ajoutez `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` dans **Settings → Secrets and variables → Actions** comme secrets du dépôt. Pour ce dépôt, l’adresse Pages est `https://benhuruma.github.io/hmb-portfolio/`. Ajoutez cette adresse comme **Site URL** dans Supabase Auth, puis ajoutez `https://benhuruma.github.io/hmb-portfolio/admin/dashboard` aux **Redirect URLs** autorisées. La clé anon/publishable est visible dans le JavaScript livré au navigateur ; ne configurez jamais `service_role` comme variable `VITE_*`.
+
+### Configurer la connexion OAuth GitHub et Google
+
+Pour chaque fournisseur, configurez deux destinations différentes :
+
+- **Callback du fournisseur OAuth** : l’URL de callback Supabase affichée dans **Authentication → Sign In / Providers**. Elle a habituellement la forme `https://<PROJECT_REF>.supabase.co/auth/v1/callback`. Copiez exactement l’URL affichée dans votre projet.
+- **URL de retour vers le portfolio** : dans **Authentication → URL Configuration → Redirect URLs**, autorisez `https://benhuruma.github.io/hmb-portfolio/admin/dashboard` (et l’URL localhost exacte si vous testez en local). Le code de l’application redirige l’utilisateur vers cette route après l’authentification.
+
+Pour **GitHub** :
+
+1. Dans GitHub, ouvrez **Settings → Developer settings → OAuth Apps → New OAuth App**.
+2. Saisissez le nom public du portfolio, sa page d’accueil `https://benhuruma.github.io/hmb-portfolio/` et, dans **Authorization callback URL**, collez le callback Supabase affiché pour le fournisseur GitHub.
+3. Enregistrez l’application, puis copiez son **Client ID** et générez un **Client secret**.
+4. Dans Supabase, ouvrez **Authentication → Sign In / Providers → GitHub**, activez le fournisseur et collez le Client ID et le Client secret. Enregistrez.
+
+Pour **Google** :
+
+1. Dans Google Cloud Console, créez ou sélectionnez un projet et ouvrez **Google Auth Platform**. Configurez la marque et l’écran de consentement avec le nom de l’application et les informations demandées. En mode test, ajoutez le compte Google administrateur dans **Test users**.
+2. Dans **Clients**, créez un client OAuth de type **Web application**.
+3. Dans **Authorized redirect URIs**, collez le callback Supabase affiché pour le fournisseur Google. Ne mettez pas l’URL du portfolio dans ce champ.
+4. Créez le client, puis copiez le Client ID et le Client secret dans **Supabase → Authentication → Sign In / Providers → Google**. Activez le fournisseur et enregistrez.
+
+Après configuration, vérifiez dans **Authentication → Users** que la connexion OAuth correspond au compte autorisé dans `portfolio_admin`. L’accès administrateur dépend de l’UUID du compte Supabase, pas seulement de l’adresse email. Si le fournisseur crée un utilisateur avec un UUID différent, cet utilisateur ne sera pas administrateur tant que la ligne unique `portfolio_admin` n’aura pas été provisionnée pour le bon UUID par un administrateur de base de données. Gardez les inscriptions publiques désactivées et ne partagez jamais les secrets OAuth.
 
 ### Remplacer un ancien portfolio déjà publié
 
@@ -69,7 +92,7 @@ Pour conserver l’URL de l’ancien site, le nouveau code doit être publié de
 4. Pousse les changements sur la branche configurée dans le workflow (`main` ou `master` par défaut), puis vérifie que **Settings → Pages → Source** est réglé sur **GitHub Actions**.
 5. Attends que l’action **Deploy portfolio to GitHub Pages** réussisse ; l’ancien contenu est alors remplacé à la même adresse. Si l’ancien dépôt utilise une autre branche par défaut, adapte le déclencheur `on.push.branches` du workflow à son nom.
 
-Le dépôt actuel peut aussi publier sa propre copie à `https://benhuruma.github.io/Myportfolio-2.0/`, mais cela crée une URL différente de celle de l’ancien portfolio si celui-ci dépend d’un autre dépôt.
+Le dépôt actuel publie à `https://benhuruma.github.io/hmb-portfolio/`. Si vous remplacez un autre dépôt historique, son nom ou son domaine personnalisé détermine l’adresse à conserver.
 
 ## Contact
 
