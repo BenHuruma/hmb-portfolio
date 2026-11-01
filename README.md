@@ -1,51 +1,77 @@
+# My Portfolio 2.0 — Benjamin Huruma
 
-Benjamin Huruma's Portfolio
-Welcome to my Software and Web Developer Portfolio!
+Portfolio personnel déployable gratuitement sur GitHub Pages. Le site public fonctionne sans backend avec son contenu statique intégré ; Supabase est optionnel pour l’administration et les mises à jour dynamiques.
 
-Huruma Musagara Benjamin
-### Software Developer | Passionate about New technologies & Software and Web Development
+## Aperçu
 
-Welcome to my GitHub profile! I am a rising software developer, currently in my first year of a Bachelor's degree (L1) in Software Engineering at ISIG Goma.
-My approach is guided by technical rigor, logic, and a desire to create reliable and authentic digital solutions.
+- **Site public** : présentation, compétences, formation, réalisations et contact
+- **Administration** à `/admin` : connexion réservée à l’unique compte explicitement autorisé
+- **Contenu public** : contenu statique de secours intégré ; Supabase peut fournir des réglages dynamiques
+- **CV** : lien Google Drive ou fichier PDF/DOC/DOCX téléversé dans Supabase Storage (10 Mo maximum)
+- **Thème sombre/clair**, animations et mise en page responsive
+- **Traduction à la demande** du français vers l’anglais par le widget Google Translate ; le français reste la langue source et les données enregistrées ne sont pas modifiées
+- **Contact** : prépare un email dans le logiciel de messagerie du visiteur (`mailto:`)
 
-## Technical Skills
+## Technologies
 
-### Software & Web Development
-* Front-end: HTML5, CSS3 (W3.CSS), JavaScript.
+- React + TypeScript + Vite
+- React Router (navigation publique et routes admin)
+- Supabase Auth, PostgreSQL avec RLS et Supabase Storage
 
-* Programming: Python, C#, TypeScript,...
+## Installation
 
-* Tools: Git/GitHub (CI/CD), VS Code, PyCharm, Photoshop (80% proficiency).
+```bash
+npm install
+npm run dev
+```
 
-### Specialties & Interests
-* Blockchain & Web3: Active member of the Midnight Network ecosystem and community reviewer for Cardano Catalyst.
+## Administration optionnelle
 
-* Cybersecurity: Strong interest in data protection and distributed networks.
+Le portfolio public n’a pas besoin de Supabase. Sans configuration valide, il affiche automatiquement le contenu statique intégré ; la connexion et les modifications dans `/admin` restent indisponibles.
 
-* Proficient in office software such as Microsoft Office Suite: Word, Excel, and PowerPoint.
+Pour activer l’administration :
 
-* Desktop Development
+1. Créez un projet Supabase et copiez son URL ainsi que sa clé anon/publishable dans `.env`, à partir de `.env.example`. Ne mettez jamais la clé `service_role` dans le frontend.
+2. Appliquez toutes les migrations SQL du dossier `supabase/migrations`.
+3. Créez/invitez le compte qui sera l’unique administrateur. Ensuite, désactivez **Allow new users to sign up** dans Supabase Auth et ne partagez pas ce compte.
+4. Dans le SQL Editor Supabase, ajoutez son identifiant à l’allowlist en remplaçant l’adresse ci-dessous par son email exact :
 
-## Education & Background
-* Bachelor's Degree in Software Engineering: ISIG-Goma, DRC (In progress).
+	```sql
+	INSERT INTO public.portfolio_admin (id, user_id)
+	SELECT 1, id FROM auth.users WHERE email = 'ADMIN_EMAIL'
+	ON CONFLICT (id) DO UPDATE SET user_id = EXCLUDED.user_id;
+	```
 
-* Experience: Data entry operator and technical trainer at Les Optiques World.
+	Vérifiez que la requête a inséré ou modifié exactement une ligne et que l’email correspond au compte voulu. La contrainte `id = 1`, l’unicité de `user_id` et l’absence de privilèges SQL côté client empêchent d’ajouter un second administrateur depuis l’application.
+5. Connectez-vous avec ce compte sur `/admin`.
 
-* Languages: French (Fluent), Swahili (Native), English (Technical).
+La route de l’application et les politiques RLS/Storage vérifient toutes l’UUID de cette ligne. Masquer le formulaire d’inscription côté interface ne suffit pas à sécuriser les données : gardez les migrations appliquées et l’inscription Supabase désactivée. Les fournisseurs OAuth ne donnent accès que si l’identité Auth correspond exactement à l’UUID autorisé.
 
-## Projects & Contributions
-* Personal Portfolio: Development of a responsive website with dark/light mode and contact flow integration.
+## Hébergement gratuit sur GitHub Pages
 
-* Midnight Network: Participation in community quests focused on privacy and digital agent design.
+Le workflow `.github/workflows/deploy-pages.yml` construit et publie automatiquement le site à chaque push sur `main` ou `master` :
 
-* Cardano Catalyst: Analysis and review of project proposals for the decentralized Cardano ecosystem using Catalyst.
+1. Poussez le dépôt sur GitHub.
+2. Dans **Settings → Pages**, choisissez **GitHub Actions** comme source de publication.
+3. Le workflow publie le site à `https://benhuruma.github.io/Myportfolio-2.0/` après son premier passage réussi.
 
-## Contact me
-I am always open to discussions with technology enthusiasts or for innovative project opportunities.
+Le chemin du dépôt, les images locales, les routes admin et leur rechargement sont configurés pour GitHub Pages. Le workflow ajoute une page de repli pour React Router. Aucun coût d’hébergement ni secret Supabase n’est requis pour publier le portfolio public. Le bouton de traduction utilise un service Google tiers : Internet est requis, et le texte visible de la page est transmis à Google pour traduction.
 
-* 📍 Location: Goma, North Kivu, DRC
-* Email: benjaminhuruma@gmail.com
-* Phone: +243 981 082 394
-* 🔗 LinkedIn: https://www.linkedin.com/in/benjamin-huruma-6a893539b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app
+Pour activer Supabase en production, ajoutez `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` dans **Settings → Secrets and variables → Actions** comme secrets du dépôt. Dans Supabase Auth, ajoutez `https://benhuruma.github.io/Myportfolio-2.0/` à l’URL du site et aux URL de redirection autorisées (ainsi que les fournisseurs OAuth choisis). La clé anon/publishable est visible dans le JavaScript livré au navigateur ; ne configurez jamais `service_role` comme variable `VITE_*`.
 
-"Building and progressively consolidating skills with rigor to transform the world through the wonders of computing and new technologies."
+### Remplacer un ancien portfolio déjà publié
+
+Pour conserver l’URL de l’ancien site, le nouveau code doit être publié depuis **le dépôt qui contrôle déjà cette URL** (ou depuis un dépôt configuré pour le même domaine personnalisé) :
+
+1. Fais une sauvegarde de l’ancien dépôt ou crée une branche de sauvegarde avant de remplacer ses fichiers.
+2. Copie les fichiers de ce portfolio dans le dépôt qui publie déjà l’ancien site, y compris les fichiers cachés `.github/workflows/deploy-pages.yml`, `.gitignore` et `.nojekyll`. Ne copie pas `.git`, `node_modules`, `dist` ni `.env`.
+3. Garde le nom et l’historique du dépôt cible. Le build détecte automatiquement son nom dans GitHub Actions : un site utilisateur/organisation utilise la racine du domaine, tandis qu’un site de projet utilise le chemin de son dépôt.
+4. Pousse les changements sur la branche configurée dans le workflow (`main` ou `master` par défaut), puis vérifie que **Settings → Pages → Source** est réglé sur **GitHub Actions**.
+5. Attends que l’action **Deploy portfolio to GitHub Pages** réussisse ; l’ancien contenu est alors remplacé à la même adresse. Si l’ancien dépôt utilise une autre branche par défaut, adapte le déclencheur `on.push.branches` du workflow à son nom.
+
+Le dépôt actuel peut aussi publier sa propre copie à `https://benhuruma.github.io/Myportfolio-2.0/`, mais cela crée une URL différente de celle de l’ancien portfolio si celui-ci dépend d’un autre dépôt.
+
+## Contact
+
+- Email: benjaminhuruma@gmail.com
+- Localisation: Goma, Nord-Kivu, RDC

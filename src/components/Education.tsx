@@ -1,0 +1,73 @@
+import { useReveal } from '../hooks/useReveal'
+import { getCvDownloadUrl } from '../lib/settings'
+import type { SiteSettings } from '../lib/types'
+
+interface EducationProps {
+  settings: SiteSettings
+}
+
+const ICONS: Record<string, string> = {
+  'Licence en Génie Logiciel': 'fa-solid fa-graduation-cap',
+  "Diplôme d'État": 'fa-solid fa-certificate',
+  'Opérateur de saisie & Formateur technique': 'fa-solid fa-briefcase',
+}
+
+export function Education({ settings }: EducationProps) {
+  const { ref, visible } = useReveal<HTMLDivElement>()
+
+  return (
+    <section id="education" className="section" ref={ref}>
+      <div className="container">
+        <div className={`reveal ${visible ? 'visible' : ''}`}>
+          <span className="section-label">Formation</span>
+          <h2 className="section-title">Parcours académique et expérience</h2>
+          <p className="section-description">Une formation en génie logiciel enrichie par des expériences pratiques sur le terrain.</p>
+        </div>
+
+        <div className={`education__timeline ${visible ? 'reveal visible' : 'reveal'}`}>
+          {settings.education_items.map((item, i) => (
+            <div key={i} className="education__item">
+              <div className="education__marker">
+                <i className={ICONS[item.title] || 'fa-solid fa-graduation-cap'}></i>
+              </div>
+              <div className="education__content">
+                <span className="education__period">{item.period}</span>
+                <h3 className="education__title">{item.title}</h3>
+                <p className="education__place">{item.place}</p>
+                <p className="education__desc">{item.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className={`education__cv ${visible ? 'reveal visible' : 'reveal'}`}>
+          <a href={getCvDownloadUrl(settings)} target="_blank" rel="noopener noreferrer" className="education__cv-btn">
+            <i className="fa-solid fa-file-arrow-down"></i>
+            Télécharger mon CV complet
+          </a>
+        </div>
+      </div>
+      <style>{`
+        .education__timeline { margin-top: 48px; display: flex; flex-direction: column; gap: 0; position: relative; }
+        .education__item { display: grid; grid-template-columns: 48px 1fr; gap: 24px; padding-bottom: 40px; position: relative; }
+        .education__item:last-child { padding-bottom: 0; }
+        .education__item:not(:last-child)::before { content: ''; position: absolute; left: 23px; top: 48px; bottom: 0; width: 2px; background: var(--color-border-soft); }
+        .education__marker { width: 48px; height: 48px; border-radius: 50%; background: var(--color-bg-card); border: 2px solid var(--color-accent); display: flex; align-items: center; justify-content: center; color: var(--color-accent); font-size: 1.0625rem; flex-shrink: 0; z-index: 1; position: relative; }
+        .education__content { background: var(--color-bg-card); border: 1px solid var(--color-border-soft); border-radius: var(--radius-md); padding: 24px; transition: border-color var(--transition), transform var(--transition); }
+        .education__content:hover { border-color: var(--color-border); transform: translateX(4px); }
+        .education__period { display: inline-block; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-accent); background: var(--color-accent-soft); padding: 3px 10px; border-radius: 100px; margin-bottom: 12px; }
+        .education__title { font-size: 1.0625rem; font-weight: 600; color: var(--color-text); margin-bottom: 4px; }
+        .education__place { font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 12px; }
+        .education__desc { font-size: 0.875rem; color: var(--color-text-secondary); line-height: 1.7; }
+        .education__cv { margin-top: 48px; display: flex; justify-content: center; }
+        .education__cv-btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: var(--radius-md); background: var(--color-accent); color: #fff; font-size: 0.9375rem; font-weight: 500; transition: all var(--transition); }
+        .education__cv-btn:hover { background: var(--color-accent-hover); color: #fff; transform: translateY(-2px); box-shadow: var(--shadow-glow); }
+        @media (max-width: 480px) {
+          .education__item { grid-template-columns: 40px 1fr; gap: 16px; }
+          .education__marker { width: 40px; height: 40px; font-size: 0.875rem; }
+          .education__item:not(:last-child)::before { left: 19px; top: 40px; }
+        }
+      `}</style>
+    </section>
+  )
+}
