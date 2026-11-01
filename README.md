@@ -1,9 +1,9 @@
-#hmb-portfolio
+
 Benjamin Huruma's Portfolio
 Welcome to my Software and Web Developer Portfolio!
 
-#Huruma Musagara Benjamin
-### Junior Software Developer | Passionate about Blockchain & Software and Web Development
+Huruma Musagara Benjamin
+### Software Developer | Passionate about New technologies & Software and Web Development
 
 Welcome to my GitHub profile! I am a rising software developer, currently in my first year of a Bachelor's degree (L1) in Software Engineering at ISIG Goma.
 My approach is guided by technical rigor, logic, and a desire to create reliable and authentic digital solutions.
@@ -13,7 +13,7 @@ My approach is guided by technical rigor, logic, and a desire to create reliable
 ### Software & Web Development
 * Front-end: HTML5, CSS3 (W3.CSS), JavaScript.
 
-* Programming: Python, C#.
+* Programming: Python, C#, TypeScript,...
 
 * Tools: Git/GitHub (CI/CD), VS Code, PyCharm, Photoshop (80% proficiency).
 
