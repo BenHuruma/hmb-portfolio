@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { signOut as authSignOut } from '../lib/auth'
+import { withTimeout } from '../lib/withTimeout'
+
+const AUTH_REQUEST_TIMEOUT_MS = 12_000
 
 export function useAuth() {
   const [email, setEmail] = useState<string | null>(null)
@@ -10,12 +13,25 @@ export function useAuth() {
   const [adminLoading, setAdminLoading] = useState(true)
 
   const checkAuth = useCallback(async () => {
-    const { data } = await supabase.auth.getSession()
-    const user = data.session?.user
-    setEmail(user?.email ?? null)
-    setAdminLoading(!!user?.id)
-    setUserId(user?.id ?? null)
-    setLoading(false)
+    try {
+      const { data } = await withTimeout(
+        supabase.auth.getSession(),
+        AUTH_REQUEST_TIMEOUT_MS,
+        'La vérification de la session a expiré.',
+      )
+      const user = data.session?.user
+      setEmail(user?.email ?? null)
+      setAdminLoading(!!user?.id)
+      setUserId(user?.id ?? null)
+    } catch (error) {
+      console.error('Unable to load the Supabase session.', error)
+      setEmail(null)
+      setUserId(null)
+      setIsAdmin(false)
+      setAdminLoading(false)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -40,7 +56,11 @@ export function useAuth() {
     setAdminLoading(true)
     void (async () => {
       try {
-        const { data, error } = await supabase.rpc('is_portfolio_admin')
+        const { data, error } = await withTimeout(
+          supabase.rpc('is_portfolio_admin'),
+          AUTH_REQUEST_TIMEOUT_MS,
+          'La vérification du compte administrateur a expiré.',
+        )
         if (active) setIsAdmin(!error && data === true)
       } catch (error) {
         console.error('Unable to verify portfolio admin access.', error)

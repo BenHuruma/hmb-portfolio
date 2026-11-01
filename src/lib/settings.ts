@@ -1,6 +1,9 @@
 import { isSupabaseConfigured, supabase } from './supabase'
 import { DEFAULT_SITE_SETTINGS } from './defaultSettings'
 import type { SiteSettings } from './types'
+import { withTimeout } from './withTimeout'
+
+const SETTINGS_REQUEST_TIMEOUT_MS = 12_000
 
 function mapRow(data: Record<string, unknown>): SiteSettings {
   return {
@@ -35,11 +38,15 @@ export async function getSettings(): Promise<SiteSettings> {
   if (!isSupabaseConfigured) return DEFAULT_SITE_SETTINGS
 
   try {
-    const { data, error } = await supabase
-      .from('site_settings')
-      .select('*')
-      .eq('id', 1)
-      .maybeSingle()
+    const { data, error } = await withTimeout(
+      supabase
+        .from('site_settings')
+        .select('*')
+        .eq('id', 1)
+        .maybeSingle(),
+      SETTINGS_REQUEST_TIMEOUT_MS,
+      'Le chargement des réglages a expiré.',
+    )
 
     if (error) throw error
     if (!data) throw new Error('No settings found')
