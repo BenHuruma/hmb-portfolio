@@ -81,11 +81,31 @@ export async function requestPasswordReset(email: string): Promise<AuthResult> {
     return { success: false, error: 'Email requis' }
   }
   const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}admin?flow=reset`
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo,
-  })
-  if (error) {
-    return { success: false, error: "Envoi impossible. Réessayez." }
+
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo })
+    if (error) {
+      console.error('Supabase password recovery request failed.', {
+        message: error.message,
+        status: error.status,
+        code: error.code,
+      })
+      if (error.status === 429) {
+        return { success: false, error: 'Trop de demandes de récupération. Attendez quelques minutes avant de réessayer.' }
+      }
+      return {
+        success: false,
+        error: `Supabase n’a pas pu envoyer le lien : ${error.message}`,
+      }
+    }
+  } catch (error) {
+    console.error('Password recovery request failed.', error)
+    return {
+      success: false,
+      error: error instanceof Error
+        ? `Impossible de contacter Supabase : ${error.message}`
+        : 'Impossible de contacter Supabase. Vérifiez votre connexion puis réessayez.',
+    }
   }
   return { success: true }
 }
