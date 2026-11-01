@@ -12,6 +12,7 @@ import { useAuth } from '../hooks/useAuth'
 
 type Mode = 'signin' | 'forgot'
 type ForgotStep = 'email' | 'password'
+type RecoveryStatus = 'checking' | 'ready' | 'invalid'
 
 export function LoginPage() {
   const location = useLocation()
@@ -22,6 +23,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [forgotEmail, setForgotEmail] = useState('')
+  const [recoveryStatus, setRecoveryStatus] = useState<RecoveryStatus>(passwordResetRedirect ? 'checking' : 'invalid')
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -39,19 +41,71 @@ export function LoginPage() {
     if (passwordResetRedirect) {
       setMode('forgot')
       setForgotStep('password')
-      setInfo('Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.')
+      setInfo('Vérification du lien de récupération Supabase…')
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setMode('forgot')
-        setForgotStep('password')
+    let active = true
+    const recoveryTimeout = passwordResetRedirect
+      ? setTimeout(() => {
+          void supabase.auth.getSession().then(({ data }) => {
+            if (!active) return
+            if (data.session) {
+              setRecoveryStatus('ready')
+              setError(null)
+              setInfo('Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.')
+              return
+            }
+            setRecoveryStatus('invalid')
+            setError('Aucune session de récupération valide. Le lien a peut-être expiré ou a déjà été utilisé. Demandez un nouveau lien et ouvrez-le dans ce même navigateur.')
+            setInfo(null)
+          }).catch(() => {
+            if (!active) return
+            setRecoveryStatus('invalid')
+            setError('Impossible de vérifier le lien Supabase. Demandez un nouveau lien de récupération.')
+            setInfo(null)
+          })
+        }, 12_000)
+      : undefined
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (passwordResetRedirect && (event === 'PASSWORD_RECOVERY' || session)) {
+        setRecoveryStatus('ready')
         setError(null)
         setInfo('Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.')
       }
+      if (event === 'PASSWORD_RECOVERY') {
+        setMode('forgot')
+        setForgotStep('password')
+      }
     })
 
-    return () => subscription.unsubscribe()
+    if (passwordResetRedirect) {
+      void supabase.auth.getSession().then(({ data, error: sessionError }) => {
+        if (!active) return
+        if (data.session) {
+          setRecoveryStatus('ready')
+          setError(null)
+          setInfo('Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.')
+        } else if (sessionError) {
+          setRecoveryStatus('invalid')
+          setInfo(null)
+          setError(`Impossible de vérifier le lien Supabase : ${sessionError.message}`)
+        }
+      }).catch((sessionError: unknown) => {
+        if (!active) return
+        setRecoveryStatus('invalid')
+        setInfo(null)
+        setError(sessionError instanceof Error
+          ? `Impossible de vérifier le lien Supabase : ${sessionError.message}`
+          : 'Impossible de vérifier le lien Supabase. Demandez un nouveau lien de récupération.')
+      })
+    }
+
+    return () => {
+      active = false
+      if (recoveryTimeout !== undefined) clearTimeout(recoveryTimeout)
+      subscription.unsubscribe()
+    }
   }, [passwordResetRedirect])
 
   useEffect(() => {
@@ -101,6 +155,11 @@ export function LoginPage() {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setInfo(null)
+    if (passwordResetRedirect && recoveryStatus !== 'ready') {
+      setError('Le lien de récupération n’est pas valide ou a expiré. Demandez un nouveau lien avant de choisir un mot de passe.')
+      return
+    }
     setLoading(true)
     const result = await updatePassword(newPassword)
     if (result.success) {
@@ -187,7 +246,11 @@ export function LoginPage() {
               </form>
             )}
 
-            {forgotStep === 'password' && (
+            {forgotStep === 'password' && passwordResetRedirect && recoveryStatus === 'checking' && (
+              <div className="login-info"><i className="fa-solid fa-spinner fa-spin"></i> Vérification de la session de récupération…</div>
+            )}
+
+            {forgotStep === 'password' && (!passwordResetRedirect || recoveryStatus === 'ready') && (
               <form className="login-form" onSubmit={handleForgotPassword}>
                 <p className="login-step-hint">Définissez votre nouveau mot de passe.</p>
                 <div className="login-field">
@@ -209,6 +272,10 @@ export function LoginPage() {
                   {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Mise à jour...</> : <><i className="fa-solid fa-key"></i> Définir le nouveau mot de passe</>}
                 </button>
               </form>
+            )}
+
+            {forgotStep === 'password' && recoveryStatus === 'invalid' && error && (
+              <div className="login-error"><i className="fa-solid fa-circle-exclamation"></i> {error}</div>
             )}
 
             {info && forgotStep !== 'email' && <div className="login-info"><i className="fa-solid fa-circle-info"></i> {info}</div>}

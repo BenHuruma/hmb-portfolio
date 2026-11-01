@@ -90,10 +90,7 @@ export async function requestPasswordReset(email: string): Promise<AuthResult> {
   return { success: true }
 }
 
-/**
- * Set a new password after OTP verification. Requires an active session
- * (established by verifyResetCode).
- */
+/** Set a new password using the active Supabase recovery session. */
 export async function updatePassword(newPassword: string): Promise<AuthResult> {
   if (!isSupabaseConfigured) {
     return { success: false, error: 'La connexion admin nécessite une configuration Supabase.' }
@@ -104,9 +101,31 @@ export async function updatePassword(newPassword: string): Promise<AuthResult> {
   if (newPassword.length < 6) {
     return { success: false, error: 'Le mot de passe doit faire au moins 6 caractères' }
   }
-  const { error } = await supabase.auth.updateUser({ password: newPassword })
-  if (error) {
-    return { success: false, error: "Mise à jour impossible. Réessayez." }
+
+  try {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError) {
+      return { success: false, error: `Impossible de vérifier la session Supabase : ${sessionError.message}` }
+    }
+    if (!sessionData.session) {
+      return {
+        success: false,
+        error: 'La session de récupération est absente ou expirée. Demandez un nouveau lien et ouvrez-le dans ce même navigateur.',
+      }
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) {
+      return { success: false, error: `Supabase refuse la mise à jour : ${error.message}` }
+    }
+  } catch (error) {
+    console.error('Password recovery update failed.', error)
+    return {
+      success: false,
+      error: error instanceof Error
+        ? `Échec de la mise à jour : ${error.message}`
+        : 'Échec de la mise à jour. Vérifiez la connexion et demandez un nouveau lien si nécessaire.',
+    }
   }
   return { success: true }
 }
