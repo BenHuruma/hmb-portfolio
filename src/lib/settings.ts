@@ -2,11 +2,13 @@ import { isSupabaseConfigured, supabase } from './supabase'
 import { DEFAULT_SITE_SETTINGS } from './defaultSettings'
 import type { SiteSettings } from './types'
 import { withTimeout } from './withTimeout'
+import { mergeSiteCopy } from './siteCopy'
 
 const SETTINGS_REQUEST_TIMEOUT_MS = 12_000
 
 function mapRow(data: Record<string, unknown>): SiteSettings {
   return {
+    site_copy: mergeSiteCopy(data.site_copy),
     hero_name: data.hero_name as string,
     hero_subtitle: data.hero_subtitle as string,
     hero_status: data.hero_status as string,
@@ -38,7 +40,7 @@ export async function getSettings(): Promise<SiteSettings> {
     const { data, error } = await withTimeout(
       supabase
         .from('site_settings')
-        .select('id, hero_name, hero_subtitle, hero_status, about_text, about_location, about_education, about_languages, about_email, skills_mastered, skills_progress, education_items, achievements, contact_email, contact_phone, contact_location, hero_photo_url, about_photo_url, linkedin_url, github_url, twitter_url, whatsapp_url')
+        .select('id, site_copy, hero_name, hero_subtitle, hero_status, about_text, about_location, about_education, about_languages, about_email, skills_mastered, skills_progress, education_items, achievements, contact_email, contact_phone, contact_location, hero_photo_url, about_photo_url, linkedin_url, github_url, twitter_url, whatsapp_url')
         .eq('id', 1)
         .maybeSingle(),
       SETTINGS_REQUEST_TIMEOUT_MS,
@@ -62,6 +64,7 @@ export async function updateSettings(settings: SiteSettings): Promise<void> {
   const { data, error } = await supabase
     .from('site_settings')
     .update({
+      site_copy: settings.site_copy,
       hero_name: settings.hero_name,
       hero_subtitle: settings.hero_subtitle,
       hero_status: settings.hero_status,

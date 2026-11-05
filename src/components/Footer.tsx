@@ -17,7 +17,7 @@ export function Footer({ settings }: FooterProps) {
       <div className="container footer__inner">
         <div className="footer__top">
           <div className="footer__brand">
-            <span className="footer__logo">BH</span>
+            <span className="footer__logo">{settings.site_copy.footer_brand_mark}</span>
             <div>
               <p className="footer__name">{settings.hero_name}</p>
               <p className="footer__role">{settings.hero_subtitle.split(',')[0]}</p>
@@ -33,7 +33,7 @@ export function Footer({ settings }: FooterProps) {
         </div>
         <div className="footer__bottom">
           <p>{settings.contact_location} — {new Date().getFullYear()}</p>
-          <p className="footer__credit">Conçu et développé par <a href={settings.github_url || '#'} target="_blank" rel="noopener noreferrer">{settings.hero_name}</a></p>
+          <p className="footer__credit">{settings.site_copy.footer_credit_prefix} <a href={settings.github_url || '#'} target="_blank" rel="noopener noreferrer">{settings.hero_name}</a></p>
         </div>
       </div>
       <style>{`

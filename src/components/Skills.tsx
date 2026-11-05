@@ -30,17 +30,17 @@ export function Skills({ settings }: SkillsProps) {
   const progress = settings.skills_progress.split(',').map((s) => s.trim()).filter(Boolean)
 
   const groups = [
-    { title: 'Compétences maîtrisées', status: 'Maîtrise', skills: mastered, badgeClass: 'skills__badge--solid' },
-    { title: 'En progression', status: 'En progression', skills: progress, badgeClass: 'skills__badge--progress' },
+    { title: settings.site_copy.skills_mastered_title, status: settings.site_copy.skills_mastered_status, skills: mastered, badgeClass: 'skills__badge--solid' },
+    { title: settings.site_copy.skills_progress_title, status: settings.site_copy.skills_progress_status, skills: progress, badgeClass: 'skills__badge--progress' },
   ]
 
   return (
     <section id="skills" className="section" ref={ref}>
       <div className="container">
         <div className={`reveal ${visible ? 'visible' : ''}`}>
-          <span className="section-label">Compétences</span>
-          <h2 className="section-title">Ce que je maîtrise et ce que j'apprends</h2>
-          <p className="section-description">Un aperçu de mes compétences techniques et de celles que je développe activement.</p>
+          <span className="section-label">{settings.site_copy.skills_label}</span>
+          <h2 className="section-title">{settings.site_copy.skills_heading}</h2>
+          <p className="section-description">{settings.site_copy.skills_description}</p>
         </div>
 
         <div className={`skills__grid ${visible ? 'reveal visible' : 'reveal'}`}>

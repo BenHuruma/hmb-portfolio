@@ -14,10 +14,10 @@ const ICONS: Record<string, string> = {
   'Membre actif — Safrochain': 'fa-solid fa-link',
 }
 
-const CERTIFICATES = [
-  { src: `${import.meta.env.BASE_URL}certificatMidnight1.WebP`, alt: 'Certificat Midnight — Benjamin Huruma' },
-  { src: `${import.meta.env.BASE_URL}CertificatMidnight2.WebP`, alt: 'Certificat Midnight — Benjamin Huruma' },
-]
+function resolveCertificateUrl(url: string): string {
+  if (/^(https?:)?\/\//i.test(url) || url.startsWith('/')) return url
+  return `${import.meta.env.BASE_URL}${url}`
+}
 
 export function Work({ settings }: WorkProps) {
   const { ref, visible } = useReveal<HTMLDivElement>()
@@ -27,9 +27,9 @@ export function Work({ settings }: WorkProps) {
     <section id="work" className="section" ref={ref}>
       <div className="container">
         <div className={`reveal ${visible ? 'visible' : ''}`}>
-          <span className="section-label">Réalisations</span>
-          <h2 className="section-title">Projets et contributions</h2>
-          <p className="section-description">Au fil du temps, j'ai travaillé sur des projets logiciels et je me suis impliqué activement dans plusieurs écosystèmes blockchain.</p>
+          <span className="section-label">{settings.site_copy.work_label}</span>
+          <h2 className="section-title">{settings.site_copy.work_heading}</h2>
+          <p className="section-description">{settings.site_copy.work_description}</p>
         </div>
 
         <div className={`work__grid ${visible ? 'reveal visible' : 'reveal'}`}>
@@ -49,16 +49,18 @@ export function Work({ settings }: WorkProps) {
           ))}
         </div>
 
-        <div className={`work__certificates ${visible ? 'reveal visible' : 'reveal'}`}>
-          <h3 className="work__cert-title">Certificats — Midnight Network</h3>
+        {settings.site_copy.certificates.length > 0 && <div className={`work__certificates ${visible ? 'reveal visible' : 'reveal'}`}>
+          <h3 className="work__cert-title">{settings.site_copy.certificates_title}</h3>
           <div className="work__cert-grid">
-            {CERTIFICATES.map((cert) => (
-              <button key={cert.src} className="work__cert-img-btn" onClick={() => setModalImg(cert)} aria-label={`Agrandir: ${cert.alt}`}>
-                <img src={cert.src} alt={cert.alt} />
+            {settings.site_copy.certificates.map((cert, index) => {
+              const image = { src: resolveCertificateUrl(cert.image_url), alt: cert.alt }
+              return <button key={`${cert.image_url}-${index}`} className="work__cert-img-btn" onClick={() => setModalImg(image)} aria-label={`Agrandir: ${cert.title || cert.alt}`}>
+                <img src={image.src} alt={image.alt} />
+                {cert.title && <span>{cert.title}</span>}
               </button>
-            ))}
+            })}
           </div>
-        </div>
+        </div>}
       </div>
 
       {modalImg && (
@@ -88,6 +90,7 @@ export function Work({ settings }: WorkProps) {
         .work__cert-img-btn { display: block; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--color-border-soft); background: none; padding: 0; cursor: zoom-in; transition: border-color var(--transition), transform var(--transition); }
         .work__cert-img-btn:hover { border-color: var(--color-accent); transform: translateY(-2px); }
         .work__cert-img-btn img { width: 100%; height: auto; display: block; }
+        .work__cert-img-btn span { display: block; padding: 12px 16px; color: var(--color-text-secondary); font-size: 0.875rem; text-align: left; }
         .work__modal { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.88); display: flex; align-items: center; justify-content: center; padding: 32px; animation: fade-in 0.25s ease; }
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         .work__modal img { max-width: 100%; max-height: 90vh; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); }

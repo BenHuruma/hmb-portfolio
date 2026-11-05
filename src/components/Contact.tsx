@@ -23,18 +23,18 @@ export function Contact({ settings }: ContactProps) {
   }
 
   const contactInfo = [
-    { icon: 'fa-solid fa-envelope', label: 'Email', value: settings.contact_email, href: `mailto:${settings.contact_email}` },
-    { icon: 'fa-solid fa-phone', label: 'Téléphone', value: settings.contact_phone, href: `https://wa.me/${settings.contact_phone.replace(/[^0-9]/g, '')}` },
-    { icon: 'fa-solid fa-location-dot', label: 'Localisation', value: settings.contact_location, href: null },
+    { icon: 'fa-solid fa-envelope', label: settings.site_copy.contact_email_label, value: settings.contact_email, href: `mailto:${settings.contact_email}` },
+    { icon: 'fa-solid fa-phone', label: settings.site_copy.contact_phone_label, value: settings.contact_phone, href: `https://wa.me/${settings.contact_phone.replace(/[^0-9]/g, '')}` },
+    { icon: 'fa-solid fa-location-dot', label: settings.site_copy.contact_location_label, value: settings.contact_location, href: null },
   ]
 
   return (
     <section id="contact" className="section" ref={ref}>
       <div className="container">
         <div className={`reveal ${visible ? 'visible' : ''}`}>
-          <span className="section-label">Contact</span>
-          <h2 className="section-title">Restons en contact</h2>
-          <p className="section-description">Une question, une opportunité ou envie d'échanger ? N'hésitez pas à m'écrire.</p>
+          <span className="section-label">{settings.site_copy.contact_label}</span>
+          <h2 className="section-title">{settings.site_copy.contact_heading}</h2>
+          <p className="section-description">{settings.site_copy.contact_description}</p>
         </div>
 
         <div className={`contact ${visible ? 'reveal visible' : 'reveal'}`}>
@@ -56,19 +56,19 @@ export function Contact({ settings }: ContactProps) {
 
           <form className="contact__form" onSubmit={handleSubmit}>
             <div className="contact__field">
-              <label htmlFor="name">Nom</label>
-              <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Votre nom" />
+              <label htmlFor="name">{settings.site_copy.contact_form_name_label}</label>
+              <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder={settings.site_copy.contact_form_name_placeholder} />
             </div>
             <div className="contact__field">
-              <label htmlFor="email">Email</label>
-              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="vous@exemple.com" />
+              <label htmlFor="email">{settings.site_copy.contact_form_email_label}</label>
+              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder={settings.site_copy.contact_form_email_placeholder} />
             </div>
             <div className="contact__field">
-              <label htmlFor="message">Message</label>
-              <textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} required rows={5} placeholder="Votre message..." />
+              <label htmlFor="message">{settings.site_copy.contact_form_message_label}</label>
+              <textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} required rows={5} placeholder={settings.site_copy.contact_form_message_placeholder} />
             </div>
             <button type="submit" className="contact__submit">
-              {sent ? (<><i className="fa-solid fa-check"></i> Message prêt à être envoyé</>) : (<><i className="fa-solid fa-paper-plane"></i> Envoyer le message</>)}
+              {sent ? (<><i className="fa-solid fa-check"></i> {settings.site_copy.contact_form_sent_label}</>) : (<><i className="fa-solid fa-paper-plane"></i> {settings.site_copy.contact_form_send_label}</>)}
             </button>
           </form>
         </div>

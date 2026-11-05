@@ -1,21 +1,14 @@
 import { useEffect, useState } from 'react'
 import { GoogleTranslateButton } from './GoogleTranslateButton'
-
-const NAV_LINKS = [
-  { href: '#hero', label: 'Accueil' },
-  { href: '#about', label: 'À propos' },
-  { href: '#skills', label: 'Compétences' },
-  { href: '#education', label: 'Formation' },
-  { href: '#work', label: 'Réalisations' },
-  { href: '#contact', label: 'Contact' },
-] as const
+import type { SiteCopy } from '../lib/siteCopy'
 
 interface NavbarProps {
   theme: 'dark' | 'light'
   toggleTheme: () => void
+  copy: SiteCopy
 }
 
-export function Navbar({ theme, toggleTheme }: NavbarProps) {
+export function Navbar({ theme, toggleTheme, copy }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
   const [activeSection, setActiveSection] = useState('#hero')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -35,12 +28,12 @@ export function Navbar({ theme, toggleTheme }: NavbarProps) {
       },
       { rootMargin: '-40% 0px -55% 0px' },
     )
-    NAV_LINKS.forEach(({ href }) => {
-      const el = document.querySelector(href)
+    copy.nav_links.forEach(({ id }) => {
+      const el = document.querySelector(`#${id}`)
       if (el) observer.observe(el)
     })
     return () => observer.disconnect()
-  }, [])
+  }, [copy.nav_links])
 
   const handleNavClick = (href: string) => {
     setMenuOpen(false)
@@ -59,25 +52,26 @@ export function Navbar({ theme, toggleTheme }: NavbarProps) {
             handleNavClick('#hero')
           }}
         >
-          <span className="navbar__logo-mark">BH</span>
-          <span className="navbar__logo-text">Benjamin Huruma</span>
+          <span className="navbar__logo-mark">{copy.navbar_brand_mark}</span>
+          <span className="navbar__logo-text">{copy.navbar_brand_name}</span>
         </a>
 
         <ul className={`navbar__links ${menuOpen ? 'navbar__links--open' : ''}`}>
-          {NAV_LINKS.map((link) => (
-            <li key={link.href}>
+          {copy.nav_links.map((link) => {
+            const href = `#${link.id}`
+            return <li key={link.id}>
               <a
-                href={link.href}
-                className={activeSection === link.href ? 'navbar__link navbar__link--active' : 'navbar__link'}
+                href={href}
+                className={activeSection === href ? 'navbar__link navbar__link--active' : 'navbar__link'}
                 onClick={(e) => {
                   e.preventDefault()
-                  handleNavClick(link.href)
+                  handleNavClick(href)
                 }}
               >
                 {link.label}
               </a>
             </li>
-          ))}
+          })}
         </ul>
 
         <div className="navbar__actions">

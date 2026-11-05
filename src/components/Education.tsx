@@ -18,9 +18,9 @@ export function Education({ settings }: EducationProps) {
     <section id="education" className="section" ref={ref}>
       <div className="container">
         <div className={`reveal ${visible ? 'visible' : ''}`}>
-          <span className="section-label">Formation</span>
-          <h2 className="section-title">Parcours académique et expérience</h2>
-          <p className="section-description">Une formation en génie logiciel enrichie par des expériences pratiques sur le terrain.</p>
+          <span className="section-label">{settings.site_copy.education_label}</span>
+          <h2 className="section-title">{settings.site_copy.education_heading}</h2>
+          <p className="section-description">{settings.site_copy.education_description}</p>
         </div>
 
         <div className={`education__timeline ${visible ? 'reveal visible' : 'reveal'}`}>

@@ -1,4 +1,6 @@
+import type { SiteCopy } from './siteCopy'
 export interface SiteSettings {
+  site_copy: SiteCopy
   hero_name: string
   hero_subtitle: string
   hero_status: string

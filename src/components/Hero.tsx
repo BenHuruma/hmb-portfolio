@@ -28,7 +28,7 @@ export function Hero({ settings }: HeroProps) {
                 document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' })
               }}
             >
-              Me contacter
+              {settings.site_copy.hero_contact_cta}
               <i className="fa-solid fa-arrow-right"></i>
             </a>
           </div>

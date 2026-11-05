@@ -36,7 +36,7 @@ function PublicSite() {
 
   return (
     <>
-      <Navbar theme={theme} toggleTheme={toggleTheme} />
+      <Navbar theme={theme} toggleTheme={toggleTheme} copy={settings.site_copy} />
       <main>
         <Hero settings={settings} />
         <About settings={settings} />

@@ -1,7 +1,9 @@
 import type { SiteSettings } from './types'
+import { DEFAULT_SITE_COPY } from './siteCopy'
 
 /** Static content keeps the public portfolio available without Supabase. */
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
+  site_copy: DEFAULT_SITE_COPY,
   hero_name: 'Benjamin Huruma',
   hero_subtitle: 'Développeur Web & Ingénieur Logiciel, passionné par la blockchain, la cybersécurité et la création de solutions numériques durables.',
   hero_status: 'Disponible pour des opportunités',

@@ -6,6 +6,7 @@ import { updateSettings } from '../lib/settings'
 import { verifySudoPassword } from '../lib/auth'
 import { sortAchievementsWithSourceIndex } from '../lib/achievements'
 import type { SiteSettings, EducationItem, Achievement } from '../lib/types'
+import type { SiteCopy } from '../lib/siteCopy'
 
 export function AdminDashboard() {
   const { email, signOut } = useAuth()
@@ -31,6 +32,10 @@ export function AdminDashboard() {
 
   const update = <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
     setForm((prev) => prev ? { ...prev, [key]: value } : prev)
+  }
+
+  const updateCopy = <K extends keyof SiteCopy>(key: K, value: SiteCopy[K]) => {
+    setForm((prev) => prev ? { ...prev, site_copy: { ...prev.site_copy, [key]: value } } : prev)
   }
 
   const handleSaveClick = () => {
@@ -118,6 +123,187 @@ export function AdminDashboard() {
               <label>Photo d'accueil (URL)</label>
               <input className="admin__input" type="url" value={form.hero_photo_url} onChange={(e) => update('hero_photo_url', e.target.value)} placeholder="https://... (ou laissez vide pour la photo par défaut)" />
             </div>
+          </section>
+
+          <section className="admin__section">
+            <h2 className="admin__section-title"><i className="fa-solid fa-pen-to-square"></i> Textes et éléments visibles</h2>
+            <p className="admin__section-hint">Modifiez ici les titres, descriptions, libellés, points forts et certificats affichés sur le site.</p>
+
+            <details className="admin__copy-group" open>
+              <summary>Navigation et accueil</summary>
+              <div className="admin__grid-2">
+                <div className="admin__field">
+                  <label>Initiales de la marque</label>
+                  <input className="admin__input" value={form.site_copy.navbar_brand_mark} onChange={(e) => updateCopy('navbar_brand_mark', e.target.value)} />
+                </div>
+                <div className="admin__field">
+                  <label>Nom dans la navigation</label>
+                  <input className="admin__input" value={form.site_copy.navbar_brand_name} onChange={(e) => updateCopy('navbar_brand_name', e.target.value)} />
+                </div>
+              </div>
+              <div className="admin__grid-2">
+                {form.site_copy.nav_links.map((item, index) => (
+                  <div className="admin__field" key={item.id}>
+                    <label>Menu : {item.id}</label>
+                    <input className="admin__input" value={item.label} onChange={(e) => {
+                      const links = [...form.site_copy.nav_links]
+                      links[index] = { ...links[index], label: e.target.value }
+                      updateCopy('nav_links', links)
+                    }} />
+                  </div>
+                ))}
+              </div>
+              <div className="admin__field">
+                <label>Bouton de contact sur l’accueil</label>
+                <input className="admin__input" value={form.site_copy.hero_contact_cta} onChange={(e) => updateCopy('hero_contact_cta', e.target.value)} />
+              </div>
+            </details>
+
+            <details className="admin__copy-group">
+              <summary>À propos et points forts</summary>
+              <div className="admin__grid-2">
+                <div className="admin__field">
+                  <label>Étiquette de section</label>
+                  <input className="admin__input" value={form.site_copy.about_label} onChange={(e) => updateCopy('about_label', e.target.value)} />
+                </div>
+                <div className="admin__field">
+                  <label>Titre</label>
+                  <input className="admin__input" value={form.site_copy.about_heading} onChange={(e) => updateCopy('about_heading', e.target.value)} />
+                </div>
+              </div>
+              <div className="admin__grid-2">
+                {([
+                  ['about_location_label', 'Libellé localisation'],
+                  ['about_education_label', 'Libellé études'],
+                  ['about_languages_label', 'Libellé langues'],
+                  ['about_email_label', 'Libellé email'],
+                ] as const).map(([key, label]) => (
+                  <div className="admin__field" key={key}>
+                    <label>{label}</label>
+                    <input className="admin__input" value={form.site_copy[key]} onChange={(e) => updateCopy(key, e.target.value)} />
+                  </div>
+                ))}
+              </div>
+              <h3 className="admin__copy-subtitle">Points forts</h3>
+              {form.site_copy.about_highlights.map((item, index) => (
+                <div className="admin__sub-card" key={index}>
+                  <div className="admin__sub-card-header">
+                    <span>Point fort {index + 1}</span>
+                    <button type="button" className="admin__remove-btn" onClick={() => updateCopy('about_highlights', form.site_copy.about_highlights.filter((_, i) => i !== index))} aria-label={`Supprimer le point fort ${index + 1}`}><i className="fa-solid fa-trash"></i></button>
+                  </div>
+                  <div className="admin__grid-2">
+                    <div className="admin__field">
+                      <label>Texte</label>
+                      <input className="admin__input" value={item.label} onChange={(e) => {
+                        const highlights = [...form.site_copy.about_highlights]
+                        highlights[index] = { ...item, label: e.target.value }
+                        updateCopy('about_highlights', highlights)
+                      }} />
+                    </div>
+                    <div className="admin__field">
+                      <label>Icône Font Awesome</label>
+                      <input className="admin__input" value={item.icon} onChange={(e) => {
+                        const highlights = [...form.site_copy.about_highlights]
+                        highlights[index] = { ...item, icon: e.target.value }
+                        updateCopy('about_highlights', highlights)
+                      }} placeholder="fa-solid fa-code" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <button type="button" className="admin__add-btn" onClick={() => updateCopy('about_highlights', [...form.site_copy.about_highlights, { label: '', icon: 'fa-solid fa-code' }])}><i className="fa-solid fa-plus"></i> Ajouter un point fort</button>
+            </details>
+
+            <details className="admin__copy-group">
+              <summary>Compétences, formation et réalisations</summary>
+              {([
+                ['skills_label', 'Étiquette compétences'],
+                ['skills_heading', 'Titre compétences'],
+                ['skills_description', 'Description compétences'],
+                ['skills_mastered_title', 'Titre compétences maîtrisées'],
+                ['skills_mastered_status', 'Badge compétences maîtrisées'],
+                ['skills_progress_title', 'Titre compétences en progression'],
+                ['skills_progress_status', 'Badge compétences en progression'],
+                ['education_label', 'Étiquette formation'],
+                ['education_heading', 'Titre formation'],
+                ['education_description', 'Description formation'],
+                ['work_label', 'Étiquette réalisations'],
+                ['work_heading', 'Titre réalisations'],
+                ['work_description', 'Description réalisations'],
+              ] as const).map(([key, label]) => (
+                <div className="admin__field" key={key}>
+                  <label>{label}</label>
+                  {key.endsWith('_description') ? (
+                    <textarea className="admin__textarea" rows={2} value={form.site_copy[key]} onChange={(e) => updateCopy(key, e.target.value)} />
+                  ) : (
+                    <input className="admin__input" value={form.site_copy[key]} onChange={(e) => updateCopy(key, e.target.value)} />
+                  )}
+                </div>
+              ))}
+            </details>
+
+            <details className="admin__copy-group">
+              <summary>Certificats</summary>
+              <div className="admin__field">
+                <label>Titre du bloc</label>
+                <input className="admin__input" value={form.site_copy.certificates_title} onChange={(e) => updateCopy('certificates_title', e.target.value)} />
+              </div>
+              <p className="admin__section-hint">Pour une image dans le dossier public, indiquez son nom (ex. certificat.WebP). Vous pouvez aussi coller une URL publique.</p>
+              {form.site_copy.certificates.map((item, index) => (
+                <div className="admin__sub-card" key={index}>
+                  <div className="admin__sub-card-header">
+                    <span>Certificat {index + 1}</span>
+                    <button type="button" className="admin__remove-btn" onClick={() => updateCopy('certificates', form.site_copy.certificates.filter((_, i) => i !== index))} aria-label={`Supprimer le certificat ${index + 1}`}><i className="fa-solid fa-trash"></i></button>
+                  </div>
+                  {([
+                    ['title', 'Titre'],
+                    ['image_url', 'URL ou fichier image'],
+                    ['alt', 'Texte alternatif'],
+                  ] as const).map(([key, label]) => (
+                    <div className="admin__field" key={key}>
+                      <label>{label}</label>
+                      <input className="admin__input" value={item[key]} onChange={(e) => {
+                        const certificates = [...form.site_copy.certificates]
+                        certificates[index] = { ...item, [key]: e.target.value }
+                        updateCopy('certificates', certificates)
+                      }} />
+                    </div>
+                  ))}
+                </div>
+              ))}
+              <button type="button" className="admin__add-btn" onClick={() => updateCopy('certificates', [...form.site_copy.certificates, { title: '', image_url: '', alt: '' }])}><i className="fa-solid fa-plus"></i> Ajouter un certificat</button>
+            </details>
+
+            <details className="admin__copy-group">
+              <summary>Contact et pied de page</summary>
+              {([
+                ['contact_label', 'Étiquette contact'],
+                ['contact_heading', 'Titre contact'],
+                ['contact_description', 'Description contact'],
+                ['contact_email_label', 'Libellé email'],
+                ['contact_phone_label', 'Libellé téléphone'],
+                ['contact_location_label', 'Libellé localisation'],
+                ['contact_form_name_label', 'Libellé champ nom'],
+                ['contact_form_email_label', 'Libellé champ email'],
+                ['contact_form_message_label', 'Libellé champ message'],
+                ['contact_form_name_placeholder', 'Exemple champ nom'],
+                ['contact_form_email_placeholder', 'Exemple champ email'],
+                ['contact_form_message_placeholder', 'Exemple champ message'],
+                ['contact_form_send_label', 'Bouton d’envoi'],
+                ['contact_form_sent_label', 'Confirmation après clic'],
+                ['footer_brand_mark', 'Initiales du pied de page'],
+                ['footer_credit_prefix', 'Texte de crédit du pied de page'],
+              ] as const).map(([key, label]) => (
+                <div className="admin__field" key={key}>
+                  <label>{label}</label>
+                  {key === 'contact_description' || key === 'contact_form_message_placeholder' ? (
+                    <textarea className="admin__textarea" rows={2} value={form.site_copy[key]} onChange={(e) => updateCopy(key, e.target.value)} />
+                  ) : (
+                    <input className="admin__input" value={form.site_copy[key]} onChange={(e) => updateCopy(key, e.target.value)} />
+                  )}
+                </div>
+              ))}
+            </details>
           </section>
 
           {/* Hero */}
@@ -409,6 +595,11 @@ export function AdminDashboard() {
         .admin__main { padding: 32px 24px 80px; }
         .admin__content { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
         .admin__section { background: var(--color-bg-card); border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); padding: 28px; }
+        .admin__copy-group { border-top: 1px solid var(--color-border-soft); padding: 16px 0; }
+        .admin__copy-group:last-child { padding-bottom: 0; }
+        .admin__copy-group summary { color: var(--color-text); font-size: 0.9375rem; font-weight: 600; cursor: pointer; margin-bottom: 16px; }
+        .admin__copy-group[open] summary { color: var(--color-accent); }
+        .admin__copy-subtitle { color: var(--color-text); font-size: 0.875rem; margin: 20px 0 12px; }
         .admin__section-title { font-size: 1.0625rem; font-weight: 600; color: var(--color-text); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
         .admin__section-title i { color: var(--color-accent); font-size: 1rem; }
         .admin__section-hint { font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 16px; }

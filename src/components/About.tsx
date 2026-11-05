@@ -5,13 +5,6 @@ interface AboutProps {
   settings: SiteSettings
 }
 
-const HIGHLIGHTS = [
-  { icon: 'fa-solid fa-code', label: 'Développement Web' },
-  { icon: 'fa-solid fa-cube', label: 'Blockchain & Web3' },
-  { icon: 'fa-solid fa-shield-halved', label: 'Cybersécurité' },
-  { icon: 'fa-solid fa-server', label: 'Systèmes distribués' },
-]
-
 export function About({ settings }: AboutProps) {
   const { ref, visible } = useReveal<HTMLDivElement>()
   const paragraphs = settings.about_text.split('\n\n').filter((p) => p.trim())
@@ -20,16 +13,16 @@ export function About({ settings }: AboutProps) {
       <div className="container">
         <div className={`about ${visible ? 'reveal visible' : 'reveal'}`}>
           <div className="about__text">
-            <span className="section-label">À propos</span>
-            <h2 className="section-title">Un développeur guidé par le professionnalisme et la rigueur</h2>
+            <span className="section-label">{settings.site_copy.about_label}</span>
+            <h2 className="section-title">{settings.site_copy.about_heading}</h2>
             <div className="about__paragraphs">
               {paragraphs.map((p, i) => (
                 <p key={i}>{p}</p>
               ))}
             </div>
             <div className="about__highlights">
-              {HIGHLIGHTS.map((item) => (
-                <div key={item.label} className="about__highlight">
+              {settings.site_copy.about_highlights.map((item, index) => (
+                <div key={`${item.label}-${index}`} className="about__highlight">
                   <i className={item.icon}></i>
                   <span>{item.label}</span>
                 </div>
@@ -40,19 +33,19 @@ export function About({ settings }: AboutProps) {
           <div className="about__visual">
             <div className="about__info-card">
               <div className="about__info-row">
-                <span className="about__info-label">Localisation</span>
+                <span className="about__info-label">{settings.site_copy.about_location_label}</span>
                 <span className="about__info-value">{settings.about_location}</span>
               </div>
               <div className="about__info-row">
-                <span className="about__info-label">Études</span>
+                <span className="about__info-label">{settings.site_copy.about_education_label}</span>
                 <span className="about__info-value">{settings.about_education}</span>
               </div>
               <div className="about__info-row">
-                <span className="about__info-label">Langues</span>
+                <span className="about__info-label">{settings.site_copy.about_languages_label}</span>
                 <span className="about__info-value">{settings.about_languages}</span>
               </div>
               <div className="about__info-row">
-                <span className="about__info-label">Email</span>
+                <span className="about__info-label">{settings.site_copy.about_email_label}</span>
                 <span className="about__info-value">{settings.about_email}</span>
               </div>
             </div>
