@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
-import { GoogleTranslateButton } from './GoogleTranslateButton'
+import { LanguageSelector } from './LanguageSelector'
 import type { SiteCopy } from '../lib/siteCopy'
+import type { Language } from '../lib/locales'
 
 interface NavbarProps {
   theme: 'dark' | 'light'
   toggleTheme: () => void
   copy: SiteCopy
+  language: Language
+  onLanguageChange: (language: Language) => void
 }
 
-export function Navbar({ theme, toggleTheme, copy }: NavbarProps) {
+export function Navbar({ theme, toggleTheme, copy, language, onLanguageChange }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
   const [activeSection, setActiveSection] = useState('#hero')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -75,11 +78,11 @@ export function Navbar({ theme, toggleTheme, copy }: NavbarProps) {
         </ul>
 
         <div className="navbar__actions">
-          <GoogleTranslateButton />
-          <button className="navbar__theme-btn" onClick={toggleTheme} aria-label="Changer de thème">
+          <LanguageSelector language={language} onChange={onLanguageChange} label={copy.language_selector_label} />
+          <button className="navbar__theme-btn" onClick={toggleTheme} aria-label={copy.theme_toggle_label}>
             <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'}`}></i>
           </button>
-          <button className="navbar__menu-btn" onClick={() => setMenuOpen((v) => !v)} aria-label="Menu">
+          <button className="navbar__menu-btn" onClick={() => setMenuOpen((v) => !v)} aria-label={copy.menu_toggle_label}>
             <i className={`fa-solid ${menuOpen ? 'fa-xmark' : 'fa-bars'}`}></i>
           </button>
         </div>

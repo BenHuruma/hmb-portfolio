@@ -7,12 +7,14 @@ import { verifySudoPassword } from '../lib/auth'
 import { sortAchievementsWithSourceIndex } from '../lib/achievements'
 import type { SiteSettings, EducationItem, Achievement } from '../lib/types'
 import type { SiteCopy } from '../lib/siteCopy'
+import { getLocalizedSettings, SUPPORTED_LANGUAGES, type Language } from '../lib/locales'
 
 export function AdminDashboard() {
   const { email, signOut } = useAuth()
   const { settings, loading, reload } = useSettings()
   const navigate = useNavigate()
-  const [form, setForm] = useState<SiteSettings | null>(null)
+  const [draft, setDraft] = useState<SiteSettings | null>(null)
+  const [editingLanguage, setEditingLanguage] = useState<Language>('fr')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -22,8 +24,13 @@ export function AdminDashboard() {
   const [sudoVerifying, setSudoVerifying] = useState(false)
 
   useEffect(() => {
-    if (settings) setForm({ ...settings })
+    if (settings) {
+      setDraft({ ...settings })
+      setEditingLanguage(settings.default_language)
+    }
   }, [settings])
+
+  const form = draft ? getLocalizedSettings(draft, editingLanguage) : null
 
   const handleSignOut = () => {
     signOut()
@@ -31,11 +38,34 @@ export function AdminDashboard() {
   }
 
   const update = <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
-    setForm((prev) => prev ? { ...prev, [key]: value } : prev)
+    const localizedKeys: Array<keyof SiteCopy | keyof SiteSettings> = [
+      'hero_name', 'hero_subtitle', 'hero_status', 'about_text', 'about_location', 'about_education',
+      'about_languages', 'about_email', 'skills_mastered', 'skills_progress', 'education_items', 'achievements',
+    ]
+    setDraft((prev) => {
+      if (!prev) return prev
+      if (!localizedKeys.includes(key)) return { ...prev, [key]: value }
+      return {
+        ...prev,
+        translations: {
+          ...prev.translations,
+          [editingLanguage]: { ...prev.translations[editingLanguage], [key]: value },
+        },
+      }
+    })
   }
 
   const updateCopy = <K extends keyof SiteCopy>(key: K, value: SiteCopy[K]) => {
-    setForm((prev) => prev ? { ...prev, site_copy: { ...prev.site_copy, [key]: value } } : prev)
+    setDraft((prev) => prev ? {
+      ...prev,
+      translations: {
+        ...prev.translations,
+        [editingLanguage]: {
+          ...prev.translations[editingLanguage],
+          site_copy: { ...prev.translations[editingLanguage].site_copy, [key]: value },
+        },
+      },
+    } : prev)
   }
 
   const handleSaveClick = () => {
@@ -45,7 +75,7 @@ export function AdminDashboard() {
   }
 
   const handleSave = async () => {
-    if (!form) return
+    if (!draft) return
     setSudoVerifying(true)
     setSudoError(null)
     const result = await verifySudoPassword(sudoPassword)
@@ -56,7 +86,7 @@ export function AdminDashboard() {
     }
     setSaving(true)
     try {
-      await updateSettings(form)
+      await updateSettings(draft)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
       await reload()
@@ -83,7 +113,7 @@ export function AdminDashboard() {
 
   const sortedAchievements = form ? sortAchievementsWithSourceIndex(form.achievements) : []
 
-  if (loading || !form) {
+  if (loading || !form || !draft) {
     return (
       <div className="admin-loading">
         <i className="fa-solid fa-spinner fa-spin"></i>
@@ -116,6 +146,38 @@ export function AdminDashboard() {
 
       <main className="admin__main">
         <div className="admin__content">
+          <section className="admin__section">
+            <h2 className="admin__section-title"><i className="fa-solid fa-language"></i> Langues du portfolio</h2>
+            <div className="admin__field">
+              <label htmlFor="default-language">Langue affichée par défaut aux visiteurs</label>
+              <select
+                id="default-language"
+                className="admin__input"
+                value={draft.default_language}
+                onChange={(e) => update('default_language', e.target.value as Language)}
+              >
+                {SUPPORTED_LANGUAGES.map((language) => <option key={language.code} value={language.code}>{language.flag} {language.nativeName}</option>)}
+              </select>
+            </div>
+            <div className="admin__field">
+              <label>Langue dont vous modifiez les textes</label>
+              <div className="admin__language-tabs" role="group" aria-label="Langue à modifier">
+                {SUPPORTED_LANGUAGES.map((language) => (
+                  <button
+                    type="button"
+                    key={language.code}
+                    className={`admin__language-tab${editingLanguage === language.code ? ' admin__language-tab--active' : ''}`}
+                    aria-pressed={editingLanguage === language.code}
+                    onClick={() => setEditingLanguage(language.code)}
+                  >
+                    <span>{language.flag}</span> {language.nativeName}
+                  </button>
+                ))}
+              </div>
+              <p className="admin__section-hint">Les textes, formations et réalisations modifiés ensuite concernent la langue sélectionnée. Les coordonnées, liens et photos restent partagés.</p>
+            </div>
+          </section>
+
           {/* Photo */}
           <section className="admin__section">
             <h2 className="admin__section-title"><i className="fa-solid fa-image"></i> Photo d'accueil</h2>
@@ -293,6 +355,14 @@ export function AdminDashboard() {
                 ['contact_form_sent_label', 'Confirmation après clic'],
                 ['footer_brand_mark', 'Initiales du pied de page'],
                 ['footer_credit_prefix', 'Texte de crédit du pied de page'],
+                ['language_selector_label', 'Libellé accessible du sélecteur de langue'],
+                ['theme_toggle_label', 'Libellé du bouton de thème'],
+                ['menu_toggle_label', 'Libellé du menu mobile'],
+                ['certificate_enlarge_label', 'Libellé d’agrandissement des certificats'],
+                ['contact_email_subject_prefix', 'Début de l’objet du courriel'],
+                ['contact_email_name_prefix', 'Libellé du nom dans le courriel'],
+                ['contact_email_address_prefix', 'Libellé de l’adresse dans le courriel'],
+                ['contact_email_visitor_label', 'Texte si le nom du visiteur est vide'],
               ] as const).map(([key, label]) => (
                 <div className="admin__field" key={key}>
                   <label>{label}</label>
@@ -595,6 +665,10 @@ export function AdminDashboard() {
         .admin__main { padding: 32px 24px 80px; }
         .admin__content { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
         .admin__section { background: var(--color-bg-card); border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); padding: 28px; }
+        .admin__language-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+        .admin__language-tab { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-secondary); font-size: 0.8125rem; transition: all var(--transition); }
+        .admin__language-tab:hover { color: var(--color-text); border-color: var(--color-accent); }
+        .admin__language-tab--active { color: var(--color-accent); border-color: var(--color-accent); background: var(--color-accent-soft); font-weight: 600; }
         .admin__copy-group { border-top: 1px solid var(--color-border-soft); padding: 16px 0; }
         .admin__copy-group:last-child { padding-bottom: 0; }
         .admin__copy-group summary { color: var(--color-text); font-size: 0.9375rem; font-weight: 600; cursor: pointer; margin-bottom: 16px; }

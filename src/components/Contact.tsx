@@ -15,8 +15,8 @@ export function Contact({ settings }: ContactProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const subject = encodeURIComponent(`Message de ${name || 'un visiteur'}`)
-    const body = encodeURIComponent(`Nom: ${name}\nEmail: ${email}\n\n${message}`)
+    const subject = encodeURIComponent(`${settings.site_copy.contact_email_subject_prefix} ${name || settings.site_copy.contact_email_visitor_label}`)
+    const body = encodeURIComponent(`${settings.site_copy.contact_email_name_prefix}: ${name}\n${settings.site_copy.contact_email_address_prefix}: ${email}\n\n${message}`)
     window.location.href = `mailto:${settings.contact_email}?subject=${subject}&body=${body}`
     setSent(true)
     setTimeout(() => setSent(false), 5000)

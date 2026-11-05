@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
@@ -12,10 +13,40 @@ import { AdminDashboard } from './components/AdminDashboard'
 import { useTheme } from './hooks/useTheme'
 import { useSettings } from './hooks/useSettings'
 import { useAuth } from './hooks/useAuth'
+import { getLocalizedSettings, type Language } from './lib/locales'
+
+const LANGUAGE_STORAGE_KEY = 'hmb-portfolio-language'
+
+function readSavedLanguage(): Language | null {
+  try {
+    const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY)
+    return saved === 'fr' || saved === 'en' || saved === 'sw' ? saved : null
+  } catch {
+    return null
+  }
+}
 
 function PublicSite() {
   const { theme, toggleTheme } = useTheme()
   const { settings, loading, error } = useSettings()
+  const [language, setLanguage] = useState<Language>(() => readSavedLanguage() ?? 'fr')
+
+  useEffect(() => {
+    if (settings && !readSavedLanguage()) setLanguage(settings.default_language)
+  }, [settings?.default_language])
+
+  useEffect(() => {
+    document.documentElement.lang = language
+  }, [language])
+
+  const changeLanguage = (nextLanguage: Language) => {
+    setLanguage(nextLanguage)
+    try {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage)
+    } catch {
+      // The selected language still applies for this page session.
+    }
+  }
 
   if (loading) {
     return (
@@ -34,18 +65,26 @@ function PublicSite() {
     )
   }
 
+  const localizedSettings = getLocalizedSettings(settings, language)
+
   return (
     <>
-      <Navbar theme={theme} toggleTheme={toggleTheme} copy={settings.site_copy} />
+      <Navbar
+        theme={theme}
+        toggleTheme={toggleTheme}
+        copy={localizedSettings.site_copy}
+        language={language}
+        onLanguageChange={changeLanguage}
+      />
       <main>
-        <Hero settings={settings} />
-        <About settings={settings} />
-        <Skills settings={settings} />
-        <Education settings={settings} />
-        <Work settings={settings} />
-        <Contact settings={settings} />
+        <Hero settings={localizedSettings} />
+        <About settings={localizedSettings} />
+        <Skills settings={localizedSettings} />
+        <Education settings={localizedSettings} />
+        <Work settings={localizedSettings} />
+        <Contact settings={localizedSettings} />
       </main>
-      <Footer settings={settings} />
+      <Footer settings={localizedSettings} />
     </>
   )
 }

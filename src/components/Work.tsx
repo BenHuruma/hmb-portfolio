@@ -54,7 +54,7 @@ export function Work({ settings }: WorkProps) {
           <div className="work__cert-grid">
             {settings.site_copy.certificates.map((cert, index) => {
               const image = { src: resolveCertificateUrl(cert.image_url), alt: cert.alt }
-              return <button key={`${cert.image_url}-${index}`} className="work__cert-img-btn" onClick={() => setModalImg(image)} aria-label={`Agrandir: ${cert.title || cert.alt}`}>
+              return <button key={`${cert.image_url}-${index}`} className="work__cert-img-btn" onClick={() => setModalImg(image)} aria-label={`${settings.site_copy.certificate_enlarge_label}: ${cert.title || cert.alt}`}>
                 <img src={image.src} alt={image.alt} />
                 {cert.title && <span>{cert.title}</span>}
               </button>

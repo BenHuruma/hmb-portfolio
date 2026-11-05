@@ -89,17 +89,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Keep the Google Website Translator toolbar out of the layout and controls. */
-.goog-te-banner-frame,
-iframe.skiptranslate,
-.skiptranslate.goog-te-gadget {
-  display: none !important;
-}
-
-body {
-  top: 0 !important;
-}
-
 h1, h2, h3, h4 {
   font-family: var(--font-display);
   font-weight: 600;

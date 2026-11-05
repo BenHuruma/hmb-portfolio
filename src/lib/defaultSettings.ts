@@ -1,11 +1,12 @@
 import type { SiteSettings } from './types'
 import { DEFAULT_SITE_COPY } from './siteCopy'
+import { ensureTranslations } from './locales'
 
 /** Static content keeps the public portfolio available without Supabase. */
-export const DEFAULT_SITE_SETTINGS: SiteSettings = {
+const BASE_SITE_SETTINGS: Omit<SiteSettings, 'default_language' | 'translations'> = {
   site_copy: DEFAULT_SITE_COPY,
   hero_name: 'Benjamin Huruma',
-  hero_subtitle: 'Développeur Web & Ingénieur Logiciel, passionné par la blockchain, la cybersécurité et la création de solutions numériques durables.',
+  hero_subtitle: 'Ingénieur logiciel et Développeur Web, passionné par la blockchain, la cybersécurité et la création de solutions numériques durables.',
   hero_status: 'Disponible pour des opportunités',
   about_text: `Je suis Huruma Musagara Benjamin, développeur logiciel passionné par les nouvelles technologies et leurs ,ultiples avantages dans la vie quotidienne d'où ma conviction que l’informatique et les nouvelles technologies peuvent contribuer à un monde meilleur, en unissant nos efforts.
 
@@ -77,4 +78,10 @@ Mon objectif est de développer des applications fiables, cohérentes et utiles 
   github_url: 'https://github.com/BenHuruma',
   twitter_url: 'https://x.com/ben_huruma?s=21',
   whatsapp_url: 'https://wa.me/243981082394',
+}
+
+export const DEFAULT_SITE_SETTINGS: SiteSettings = {
+  ...BASE_SITE_SETTINGS,
+  default_language: 'fr',
+  translations: ensureTranslations(BASE_SITE_SETTINGS, {}),
 }

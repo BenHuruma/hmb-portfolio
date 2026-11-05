@@ -57,6 +57,14 @@ export interface SiteCopy {
   contact_form_sent_label: string
   footer_brand_mark: string
   footer_credit_prefix: string
+  language_selector_label: string
+  theme_toggle_label: string
+  menu_toggle_label: string
+  certificate_enlarge_label: string
+  contact_email_subject_prefix: string
+  contact_email_name_prefix: string
+  contact_email_address_prefix: string
+  contact_email_visitor_label: string
 }
 
 export const DEFAULT_SITE_COPY: SiteCopy = {
@@ -117,19 +125,54 @@ export const DEFAULT_SITE_COPY: SiteCopy = {
   contact_form_sent_label: 'Message prêt à être envoyé',
   footer_brand_mark: 'BH',
   footer_credit_prefix: 'Conçu et développé par',
+  language_selector_label: 'Choisir la langue du portfolio',
+  theme_toggle_label: 'Changer de thème',
+  menu_toggle_label: 'Ouvrir le menu',
+  certificate_enlarge_label: 'Agrandir',
+  contact_email_subject_prefix: 'Message de',
+  contact_email_name_prefix: 'Nom',
+  contact_email_address_prefix: 'Email',
+  contact_email_visitor_label: 'un visiteur',
 }
 
 /** Merge persisted JSON with defaults so newly added copy fields remain backward-compatible. */
-export function mergeSiteCopy(value: unknown): SiteCopy {
+export function mergeSiteCopy(value: unknown, fallback: SiteCopy = DEFAULT_SITE_COPY): SiteCopy {
   const stored = value && typeof value === 'object' && !Array.isArray(value)
     ? value as Partial<SiteCopy>
     : {}
 
   return {
-    ...DEFAULT_SITE_COPY,
+    ...fallback,
     ...stored,
-    nav_links: Array.isArray(stored.nav_links) ? stored.nav_links : DEFAULT_SITE_COPY.nav_links,
-    about_highlights: Array.isArray(stored.about_highlights) ? stored.about_highlights : DEFAULT_SITE_COPY.about_highlights,
-    certificates: Array.isArray(stored.certificates) ? stored.certificates : DEFAULT_SITE_COPY.certificates,
+    footer_credit_prefix: typeof stored.footer_credit_prefix === 'string'
+      ? stored.footer_credit_prefix
+      : fallback.footer_credit_prefix,
+    language_selector_label: typeof stored.language_selector_label === 'string'
+      ? stored.language_selector_label
+      : fallback.language_selector_label,
+    theme_toggle_label: typeof stored.theme_toggle_label === 'string'
+      ? stored.theme_toggle_label
+      : fallback.theme_toggle_label,
+    menu_toggle_label: typeof stored.menu_toggle_label === 'string'
+      ? stored.menu_toggle_label
+      : fallback.menu_toggle_label,
+    certificate_enlarge_label: typeof stored.certificate_enlarge_label === 'string'
+      ? stored.certificate_enlarge_label
+      : fallback.certificate_enlarge_label,
+    contact_email_subject_prefix: typeof stored.contact_email_subject_prefix === 'string'
+      ? stored.contact_email_subject_prefix
+      : fallback.contact_email_subject_prefix,
+    contact_email_name_prefix: typeof stored.contact_email_name_prefix === 'string'
+      ? stored.contact_email_name_prefix
+      : fallback.contact_email_name_prefix,
+    contact_email_address_prefix: typeof stored.contact_email_address_prefix === 'string'
+      ? stored.contact_email_address_prefix
+      : fallback.contact_email_address_prefix,
+    contact_email_visitor_label: typeof stored.contact_email_visitor_label === 'string'
+      ? stored.contact_email_visitor_label
+      : fallback.contact_email_visitor_label,
+    nav_links: Array.isArray(stored.nav_links) ? stored.nav_links : fallback.nav_links,
+    about_highlights: Array.isArray(stored.about_highlights) ? stored.about_highlights : fallback.about_highlights,
+    certificates: Array.isArray(stored.certificates) ? stored.certificates : fallback.certificates,
   }
 }
