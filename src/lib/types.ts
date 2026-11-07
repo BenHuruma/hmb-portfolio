@@ -1,8 +1,7 @@
 import type { SiteCopy } from './siteCopy'
-import type { Language, LocalizedContent } from './locales'
+import type { Language } from './locales'
 export interface SiteSettings {
   default_language: Language
-  translations: Record<Language, LocalizedContent>
   site_copy: SiteCopy
   hero_name: string
   hero_subtitle: string

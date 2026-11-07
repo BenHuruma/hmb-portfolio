@@ -9,6 +9,8 @@ import {
   updatePassword,
 } from '../lib/auth'
 import { useAuth } from '../hooks/useAuth'
+import { useSettings } from '../hooks/useSettings'
+import { LanguageSelector } from './LanguageSelector'
 
 type Mode = 'signin' | 'forgot'
 type ForgotStep = 'email' | 'password'
@@ -29,7 +31,9 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState<string | null>(null)
   const { isAdmin, isAuthenticated, loading: authLoading } = useAuth()
+  const { settings } = useSettings()
   const navigate = useNavigate()
+  const copy = settings?.site_copy
 
   useEffect(() => {
     if (isAdmin && !(mode === 'forgot' && forgotStep === 'password')) {
@@ -41,7 +45,7 @@ export function LoginPage() {
     if (passwordResetRedirect) {
       setMode('forgot')
       setForgotStep('password')
-      setInfo('Vérification du lien de récupération Supabase…')
+      setInfo(copy?.admin_login_reset_verified ?? 'Vérification du lien de récupération Supabase…')
     }
 
     let active = true
@@ -52,7 +56,7 @@ export function LoginPage() {
             if (data.session) {
               setRecoveryStatus('ready')
               setError(null)
-              setInfo('Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.')
+              setInfo(copy?.admin_login_reset_verified ?? 'Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.')
               return
             }
             setRecoveryStatus('invalid')
@@ -71,7 +75,7 @@ export function LoginPage() {
       if (passwordResetRedirect && (event === 'PASSWORD_RECOVERY' || session)) {
         setRecoveryStatus('ready')
         setError(null)
-        setInfo('Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.')
+        setInfo(copy?.admin_login_reset_verified ?? 'Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.')
       }
       if (event === 'PASSWORD_RECOVERY') {
         setMode('forgot')
@@ -85,7 +89,7 @@ export function LoginPage() {
         if (data.session) {
           setRecoveryStatus('ready')
           setError(null)
-          setInfo('Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.')
+          setInfo(copy?.admin_login_reset_verified ?? 'Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.')
         } else if (sessionError) {
           setRecoveryStatus('invalid')
           setInfo(null)
@@ -106,7 +110,7 @@ export function LoginPage() {
       if (recoveryTimeout !== undefined) clearTimeout(recoveryTimeout)
       subscription.unsubscribe()
     }
-  }, [passwordResetRedirect])
+  }, [passwordResetRedirect, copy?.admin_login_reset_verified])
 
   useEffect(() => {
     if (mode === 'signin' && !authLoading && isAuthenticated && !isAdmin) {
@@ -145,7 +149,7 @@ export function LoginPage() {
     setLoading(true)
     const result = await requestPasswordReset(forgotEmail)
     if (result.success) {
-      setInfo('Si cette adresse correspond à un compte, un lien de réinitialisation a été envoyé. Ouvrez-le sur le même navigateur pour définir un nouveau mot de passe.')
+      setInfo(copy?.admin_login_reset_link_sent ?? 'Si cette adresse correspond à un compte, un lien de réinitialisation a été envoyé. Ouvrez-le sur le même navigateur pour définir un nouveau mot de passe.')
     } else {
       setError(result.error || 'Envoi impossible')
     }
@@ -164,7 +168,7 @@ export function LoginPage() {
     const result = await updatePassword(newPassword)
     if (result.success) {
       await supabase.auth.signOut()
-      setInfo('Mot de passe mis à jour. Connectez-vous avec votre nouveau mot de passe.')
+      setInfo(copy?.admin_login_reset_verified ?? 'Mot de passe mis à jour. Connectez-vous avec votre nouveau mot de passe.')
       setMode('signin')
       setForgotStep('email')
       setForgotEmail('')
@@ -206,19 +210,25 @@ export function LoginPage() {
 
   return (
     <div className="login-page">
-      <div className="login-card">
-        <a href={import.meta.env.BASE_URL} className="login-back">
-          <i className="fa-solid fa-arrow-left"></i> Retour au site
-        </a>
+      <div className="login-card" translate="yes">
+        <div className="login-topbar">
+          <a href={import.meta.env.BASE_URL} className="login-back">
+            <i className="fa-solid fa-arrow-left"></i> {copy?.admin_login_back ?? 'Retour au site'}
+          </a>
+          <LanguageSelector
+            defaultLanguage={settings?.default_language ?? 'fr'}
+            label="Choisir la langue"
+          />
+        </div>
 
         <div className="login-header">
           <div className="login-logo">BH</div>
-          <p className="login-welcome">Bienvenue dans votre espace d’administration du portfolio</p>
-          <h1 className="login-title">Administration</h1>
+          <p className="login-welcome">{copy?.admin_login_welcome ?? 'Bienvenue dans votre espace d’administration du portfolio'}</p>
+          <h1 className="login-title">{copy?.admin_login_title ?? 'Administration'}</h1>
           <p className="login-subtitle">
             {mode === 'forgot'
-              ? 'Récupération du mot de passe'
-              : 'Connectez-vous pour gérer votre portfolio'}
+              ? (copy?.admin_login_forgot_subtitle ?? 'Récupération du mot de passe')
+              : (copy?.admin_login_subtitle ?? 'Connectez-vous pour gérer votre portfolio')}
           </p>
         </div>
 
@@ -227,7 +237,7 @@ export function LoginPage() {
             {forgotStep === 'email' && (
               <form className="login-form" onSubmit={handleForgotEmail}>
                 <div className="login-field">
-                  <label htmlFor="forgot-email">Email</label>
+                  <label htmlFor="forgot-email">{copy?.admin_login_email ?? 'Email'}</label>
                   <input
                     id="forgot-email"
                     type="email"
@@ -241,7 +251,7 @@ export function LoginPage() {
                 {info && <div className="login-info"><i className="fa-solid fa-circle-info"></i> {info}</div>}
                 {error && <div className="login-error"><i className="fa-solid fa-circle-exclamation"></i> {error}</div>}
                 <button type="submit" className="login-submit" disabled={loading}>
-                  {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Envoi...</> : <><i className="fa-solid fa-paper-plane"></i> Envoyer le lien</>}
+                  {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> {copy?.admin_login_sending ?? 'Envoi...'}</> : <><i className="fa-solid fa-paper-plane"></i> {copy?.admin_login_send_reset ?? 'Envoyer le lien'}</>}
                 </button>
               </form>
             )}
@@ -252,9 +262,9 @@ export function LoginPage() {
 
             {forgotStep === 'password' && (!passwordResetRedirect || recoveryStatus === 'ready') && (
               <form className="login-form" onSubmit={handleForgotPassword}>
-                <p className="login-step-hint">Définissez votre nouveau mot de passe.</p>
+                <p className="login-step-hint">{copy?.admin_login_reset_step ?? 'Définissez votre nouveau mot de passe.'}</p>
                 <div className="login-field">
-                  <label htmlFor="new-pwd">Nouveau mot de passe</label>
+                  <label htmlFor="new-pwd">{copy?.admin_login_new_password ?? 'Nouveau mot de passe'}</label>
                   <input
                     id="new-pwd"
                     type="password"
@@ -269,7 +279,7 @@ export function LoginPage() {
                 </div>
                 {error && <div className="login-error"><i className="fa-solid fa-circle-exclamation"></i> {error}</div>}
                 <button type="submit" className="login-submit" disabled={loading}>
-                  {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Mise à jour...</> : <><i className="fa-solid fa-key"></i> Définir le nouveau mot de passe</>}
+                  {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> {copy?.admin_login_updating_password ?? 'Mise à jour...'}</> : <><i className="fa-solid fa-key"></i> {copy?.admin_login_update_password ?? 'Définir le nouveau mot de passe'}</>}
                 </button>
               </form>
             )}
@@ -282,7 +292,7 @@ export function LoginPage() {
 
             <div className="login-switch">
               <button onClick={() => switchMode('signin')} className="login-switch-btn">
-                <i className="fa-solid fa-arrow-left"></i> Retour à la connexion
+                <i className="fa-solid fa-arrow-left"></i> {copy?.admin_login_return ?? 'Retour à la connexion'}
               </button>
             </div>
           </>
@@ -291,21 +301,21 @@ export function LoginPage() {
             <div className="login-social">
               <button onClick={handleGoogle} className="login-social-btn" disabled={!!oauthLoading}>
                 {oauthLoading === 'google' ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-brands fa-google"></i>}
-                <span>Continuer avec Google</span>
+                <span>{copy?.admin_login_google ?? 'Continuer avec Google'}</span>
               </button>
               <button onClick={handleGitHub} className="login-social-btn" disabled={!!oauthLoading}>
                 {oauthLoading === 'github' ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-brands fa-github"></i>}
-                <span>Continuer avec GitHub</span>
+                <span>{copy?.admin_login_github ?? 'Continuer avec GitHub'}</span>
               </button>
             </div>
 
             <div className="login-divider">
-              <span>ou par email</span>
+              <span>{copy?.admin_login_or_email ?? 'ou par email'}</span>
             </div>
 
             <form className="login-form" onSubmit={handleSubmit}>
               <div className="login-field">
-                <label htmlFor="email">Email</label>
+                <label htmlFor="email">{copy?.admin_login_email ?? 'Email'}</label>
                 <input
                   id="email"
                   type="email"
@@ -317,7 +327,7 @@ export function LoginPage() {
                 />
               </div>
               <div className="login-field">
-                <label htmlFor="password">Mot de passe</label>
+                <label htmlFor="password">{copy?.admin_login_password ?? 'Mot de passe'}</label>
                 <input
                   id="password"
                   type="password"
@@ -331,7 +341,7 @@ export function LoginPage() {
 
               {mode === 'signin' && (
                 <button type="button" onClick={() => switchMode('forgot')} className="login-forgot">
-                  Mot de passe oublié ?
+                  {copy?.admin_login_forgot_password ?? 'Mot de passe oublié ?'}
                 </button>
               )}
 
@@ -340,16 +350,16 @@ export function LoginPage() {
 
               <button type="submit" className="login-submit" disabled={loading}>
                 {loading ? (
-                  <><i className="fa-solid fa-spinner fa-spin"></i> Chargement...</>
+                  <><i className="fa-solid fa-spinner fa-spin"></i> {copy?.admin_login_loading ?? 'Chargement...'}</>
                 ) : (
-                  <><i className="fa-solid fa-right-to-bracket"></i> Se connecter</>
+                  <><i className="fa-solid fa-right-to-bracket"></i> {copy?.admin_login_submit ?? 'Se connecter'}</>
                 )}
               </button>
             </form>
 
             <div className="login-switch">
               <button onClick={() => switchMode('forgot')} className="login-switch-btn">
-                Mot de passe oublié ?
+                {copy?.admin_login_forgot_password ?? 'Mot de passe oublié ?'}
               </button>
             </div>
           </>
@@ -384,6 +394,8 @@ export function LoginPage() {
           margin-bottom: 32px;
           transition: color var(--transition);
         }
+        .login-topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .login-topbar .login-back { margin-bottom: 32px; }
         .login-back:hover { color: var(--color-text); }
         .login-header { text-align: center; margin-bottom: 28px; }
         .login-welcome { color: var(--color-text-secondary); font-size: 0.9375rem; font-weight: 500; margin: 0 0 8px; }

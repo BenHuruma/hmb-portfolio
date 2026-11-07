@@ -1,6 +1,5 @@
 import type { SiteSettings } from './types'
 import { DEFAULT_SITE_COPY } from './siteCopy'
-import { ensureTranslations } from './locales'
 
 /** Static content keeps the public portfolio available without Supabase. */
 const BASE_SITE_SETTINGS: Omit<SiteSettings, 'default_language' | 'translations'> = {
@@ -83,5 +82,4 @@ Mon objectif est de développer des applications fiables, cohérentes et utiles 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   ...BASE_SITE_SETTINGS,
   default_language: 'fr',
-  translations: ensureTranslations(BASE_SITE_SETTINGS, {}),
 }

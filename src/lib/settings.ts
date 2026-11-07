@@ -3,12 +3,12 @@ import { DEFAULT_SITE_SETTINGS } from './defaultSettings'
 import type { SiteSettings } from './types'
 import { withTimeout } from './withTimeout'
 import { mergeSiteCopy } from './siteCopy'
-import { ensureTranslations, type Language } from './locales'
+import { isSupportedLanguage } from './locales'
 
 const SETTINGS_REQUEST_TIMEOUT_MS = 12_000
 
 function mapRow(data: Record<string, unknown>): SiteSettings {
-  const base: Omit<SiteSettings, 'default_language' | 'translations'> = {
+  const base: Omit<SiteSettings, 'default_language'> = {
     site_copy: mergeSiteCopy(data.site_copy),
     hero_name: data.hero_name as string,
     hero_subtitle: data.hero_subtitle as string,
@@ -32,13 +32,10 @@ function mapRow(data: Record<string, unknown>): SiteSettings {
     twitter_url: data.twitter_url as string,
     whatsapp_url: data.whatsapp_url as string,
   }
-  const defaultLanguage: Language = data.default_language === 'en' || data.default_language === 'sw'
-    ? data.default_language
-    : 'fr'
+  const defaultLanguage = isSupportedLanguage(data.default_language) ? data.default_language : 'fr'
   return {
     ...base,
     default_language: defaultLanguage,
-    translations: ensureTranslations(base, data.translations),
   }
 }
 
@@ -49,7 +46,7 @@ export async function getSettings(): Promise<SiteSettings> {
     const { data, error } = await withTimeout(
       supabase
         .from('site_settings')
-        .select('id, site_copy, default_language, translations, hero_name, hero_subtitle, hero_status, about_text, about_location, about_education, about_languages, about_email, skills_mastered, skills_progress, education_items, achievements, contact_email, contact_phone, contact_location, hero_photo_url, about_photo_url, linkedin_url, github_url, twitter_url, whatsapp_url')
+        .select('id, site_copy, default_language, hero_name, hero_subtitle, hero_status, about_text, about_location, about_education, about_languages, about_email, skills_mastered, skills_progress, education_items, achievements, contact_email, contact_phone, contact_location, hero_photo_url, about_photo_url, linkedin_url, github_url, twitter_url, whatsapp_url')
         .eq('id', 1)
         .maybeSingle(),
       SETTINGS_REQUEST_TIMEOUT_MS,
@@ -75,7 +72,6 @@ export async function updateSettings(settings: SiteSettings): Promise<void> {
     .update({
       site_copy: settings.site_copy,
       default_language: settings.default_language,
-      translations: settings.translations,
       hero_name: settings.hero_name,
       hero_subtitle: settings.hero_subtitle,
       hero_status: settings.hero_status,

@@ -7,14 +7,33 @@ import { verifySudoPassword } from '../lib/auth'
 import { sortAchievementsWithSourceIndex } from '../lib/achievements'
 import type { SiteSettings, EducationItem, Achievement } from '../lib/types'
 import type { SiteCopy } from '../lib/siteCopy'
-import { getLocalizedSettings, SUPPORTED_LANGUAGES, type Language } from '../lib/locales'
+import { SUPPORTED_LANGUAGES, type Language } from '../lib/locales'
+
+type AdminSectionId = 'language' | 'appearance' | 'copy' | 'hero' | 'about' | 'skills' | 'education' | 'achievements' | 'contact' | 'social'
+
+const ADMIN_SECTIONS: Array<{ id: AdminSectionId; label: string; icon: string }> = [
+  { id: 'language', label: 'Langue', icon: 'fa-solid fa-language' },
+  { id: 'appearance', label: 'Photo', icon: 'fa-solid fa-image' },
+  { id: 'copy', label: 'Textes du site', icon: 'fa-solid fa-pen-to-square' },
+  { id: 'hero', label: 'Accueil', icon: 'fa-solid fa-house' },
+  { id: 'about', label: 'À propos', icon: 'fa-solid fa-user' },
+  { id: 'skills', label: 'Compétences', icon: 'fa-solid fa-code' },
+  { id: 'education', label: 'Formation', icon: 'fa-solid fa-graduation-cap' },
+  { id: 'achievements', label: 'Réalisations', icon: 'fa-solid fa-trophy' },
+  { id: 'contact', label: 'Contact', icon: 'fa-solid fa-envelope' },
+  { id: 'social', label: 'Réseaux sociaux', icon: 'fa-solid fa-share-nodes' },
+]
+
+const draftStorageKey = (email: string) => `hmb-portfolio-admin-draft:${email.toLowerCase()}`
 
 export function AdminDashboard() {
   const { email, signOut } = useAuth()
   const { settings, loading, reload } = useSettings()
   const navigate = useNavigate()
-  const [draft, setDraft] = useState<SiteSettings | null>(null)
-  const [editingLanguage, setEditingLanguage] = useState<Language>('fr')
+  const [form, setForm] = useState<SiteSettings | null>(null)
+  const [draftReady, setDraftReady] = useState(false)
+  const [draftRestored, setDraftRestored] = useState(false)
+  const [activeSection, setActiveSection] = useState<AdminSectionId>('language')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -24,13 +43,37 @@ export function AdminDashboard() {
   const [sudoVerifying, setSudoVerifying] = useState(false)
 
   useEffect(() => {
-    if (settings) {
-      setDraft({ ...settings })
-      setEditingLanguage(settings.default_language)
+    if (!settings || !email || draftReady) return
+    let restored = false
+    try {
+      const rawDraft = localStorage.getItem(draftStorageKey(email))
+      if (rawDraft) {
+        const parsed = JSON.parse(rawDraft) as { form?: Partial<SiteSettings> }
+        if (parsed.form && typeof parsed.form === 'object') {
+          setForm({
+            ...settings,
+            ...parsed.form,
+            site_copy: { ...settings.site_copy, ...parsed.form.site_copy },
+          })
+          restored = true
+        }
+      }
+    } catch (error) {
+      console.warn('Unable to restore the local admin draft.', error)
     }
-  }, [settings])
+    if (!restored) setForm({ ...settings })
+    setDraftRestored(restored)
+    setDraftReady(true)
+  }, [settings, email, draftReady])
 
-  const form = draft ? getLocalizedSettings(draft, editingLanguage) : null
+  useEffect(() => {
+    if (!draftReady || !email || !form) return
+    try {
+      localStorage.setItem(draftStorageKey(email), JSON.stringify({ savedAt: new Date().toISOString(), form }))
+    } catch (error) {
+      console.warn('Unable to save the local admin draft.', error)
+    }
+  }, [draftReady, email, form])
 
   const handleSignOut = () => {
     signOut()
@@ -38,34 +81,11 @@ export function AdminDashboard() {
   }
 
   const update = <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
-    const localizedKeys: Array<keyof SiteCopy | keyof SiteSettings> = [
-      'hero_name', 'hero_subtitle', 'hero_status', 'about_text', 'about_location', 'about_education',
-      'about_languages', 'about_email', 'skills_mastered', 'skills_progress', 'education_items', 'achievements',
-    ]
-    setDraft((prev) => {
-      if (!prev) return prev
-      if (!localizedKeys.includes(key)) return { ...prev, [key]: value }
-      return {
-        ...prev,
-        translations: {
-          ...prev.translations,
-          [editingLanguage]: { ...prev.translations[editingLanguage], [key]: value },
-        },
-      }
-    })
+    setForm((prev) => prev ? { ...prev, [key]: value } : prev)
   }
 
   const updateCopy = <K extends keyof SiteCopy>(key: K, value: SiteCopy[K]) => {
-    setDraft((prev) => prev ? {
-      ...prev,
-      translations: {
-        ...prev.translations,
-        [editingLanguage]: {
-          ...prev.translations[editingLanguage],
-          site_copy: { ...prev.translations[editingLanguage].site_copy, [key]: value },
-        },
-      },
-    } : prev)
+    setForm((prev) => prev ? { ...prev, site_copy: { ...prev.site_copy, [key]: value } } : prev)
   }
 
   const handleSaveClick = () => {
@@ -75,7 +95,7 @@ export function AdminDashboard() {
   }
 
   const handleSave = async () => {
-    if (!draft) return
+    if (!form) return
     setSudoVerifying(true)
     setSudoError(null)
     const result = await verifySudoPassword(sudoPassword)
@@ -86,7 +106,9 @@ export function AdminDashboard() {
     }
     setSaving(true)
     try {
-      await updateSettings(draft)
+      await updateSettings(form)
+      if (email) localStorage.removeItem(draftStorageKey(email))
+      setDraftRestored(false)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
       await reload()
@@ -113,7 +135,7 @@ export function AdminDashboard() {
 
   const sortedAchievements = form ? sortAchievementsWithSourceIndex(form.achievements) : []
 
-  if (loading || !form || !draft) {
+  if (loading || !form || !draftReady) {
     return (
       <div className="admin-loading">
         <i className="fa-solid fa-spinner fa-spin"></i>
@@ -145,41 +167,52 @@ export function AdminDashboard() {
       </header>
 
       <main className="admin__main">
-        <div className="admin__content">
-          <section className="admin__section">
+        <div className="admin__workspace">
+          <aside className="admin__sidebar" aria-label="Sections du tableau de bord">
+            <p className="admin__sidebar-label">Gestion du portfolio</p>
+            {ADMIN_SECTIONS.map((section) => (
+              <button
+                type="button"
+                key={section.id}
+                className={`admin__sidebar-link${activeSection === section.id ? ' admin__sidebar-link--active' : ''}`}
+                aria-current={activeSection === section.id ? 'page' : undefined}
+                onClick={() => setActiveSection(section.id)}
+              >
+                <i className={section.icon}></i><span>{section.label}</span>
+              </button>
+            ))}
+          </aside>
+
+          <div className="admin__content">
+          <div className="admin__section-heading">
+            <div>
+              <p className="admin__eyebrow">Éditeur du portfolio</p>
+              <h2>{ADMIN_SECTIONS.find((section) => section.id === activeSection)?.label}</h2>
+            </div>
+            <span className={`admin__draft-status${draftRestored ? ' admin__draft-status--restored' : ''}`}>
+              <i className="fa-solid fa-cloud-arrow-down"></i>
+              {draftRestored ? 'Brouillon restauré' : 'Brouillon sauvegardé sur cet appareil'}
+            </span>
+          </div>
+
+          <section className="admin__section" hidden={activeSection !== 'language'}>
             <h2 className="admin__section-title"><i className="fa-solid fa-language"></i> Langues du portfolio</h2>
             <div className="admin__field">
               <label htmlFor="default-language">Langue affichée par défaut aux visiteurs</label>
               <select
                 id="default-language"
                 className="admin__input"
-                value={draft.default_language}
+                value={form.default_language}
                 onChange={(e) => update('default_language', e.target.value as Language)}
               >
                 {SUPPORTED_LANGUAGES.map((language) => <option key={language.code} value={language.code}>{language.flag} {language.nativeName}</option>)}
               </select>
             </div>
-            <div className="admin__field">
-              <label>Langue dont vous modifiez les textes</label>
-              <div className="admin__language-tabs" role="group" aria-label="Langue à modifier">
-                {SUPPORTED_LANGUAGES.map((language) => (
-                  <button
-                    type="button"
-                    key={language.code}
-                    className={`admin__language-tab${editingLanguage === language.code ? ' admin__language-tab--active' : ''}`}
-                    aria-pressed={editingLanguage === language.code}
-                    onClick={() => setEditingLanguage(language.code)}
-                  >
-                    <span>{language.flag}</span> {language.nativeName}
-                  </button>
-                ))}
-              </div>
-              <p className="admin__section-hint">Les textes, formations et réalisations modifiés ensuite concernent la langue sélectionnée. Les coordonnées, liens et photos restent partagés.</p>
-            </div>
+            <p className="admin__section-hint">Modifiez le contenu une seule fois en français dans les sections ci-dessous. Le sélecteur du site le traduit à la demande dans les dix langues disponibles. La traduction automatique peut nécessiter une relecture.</p>
           </section>
 
           {/* Photo */}
-          <section className="admin__section">
+          <section className="admin__section" hidden={activeSection !== 'appearance'}>
             <h2 className="admin__section-title"><i className="fa-solid fa-image"></i> Photo d'accueil</h2>
             <div className="admin__field">
               <label>Photo d'accueil (URL)</label>
@@ -187,7 +220,7 @@ export function AdminDashboard() {
             </div>
           </section>
 
-          <section className="admin__section">
+          <section className="admin__section" hidden={activeSection !== 'copy'}>
             <h2 className="admin__section-title"><i className="fa-solid fa-pen-to-square"></i> Textes et éléments visibles</h2>
             <p className="admin__section-hint">Modifiez ici les titres, descriptions, libellés, points forts et certificats affichés sur le site.</p>
 
@@ -377,7 +410,7 @@ export function AdminDashboard() {
           </section>
 
           {/* Hero */}
-          <section className="admin__section">
+          <section className="admin__section" hidden={activeSection !== 'hero'}>
             <h2 className="admin__section-title"><i className="fa-solid fa-house"></i> Section d'accueil</h2>
             <div className="admin__field">
               <label>Nom affiché</label>
@@ -394,7 +427,7 @@ export function AdminDashboard() {
           </section>
 
           {/* About */}
-          <section className="admin__section">
+          <section className="admin__section" hidden={activeSection !== 'about'}>
             <h2 className="admin__section-title"><i className="fa-solid fa-user"></i> À propos</h2>
             <div className="admin__field">
               <label>Texte de présentation (séparez les paragraphes par une ligne vide)</label>
@@ -423,7 +456,7 @@ export function AdminDashboard() {
           </section>
 
           {/* Skills */}
-          <section className="admin__section">
+          <section className="admin__section" hidden={activeSection !== 'skills'}>
             <h2 className="admin__section-title"><i className="fa-solid fa-code"></i> Compétences</h2>
             <p className="admin__section-hint">Séparez chaque compétence par une virgule.</p>
             <div className="admin__field">
@@ -437,7 +470,7 @@ export function AdminDashboard() {
           </section>
 
           {/* Education */}
-          <section className="admin__section">
+          <section className="admin__section" hidden={activeSection !== 'education'}>
             <h2 className="admin__section-title"><i className="fa-solid fa-graduation-cap"></i> Formation et expérience</h2>
             {form.education_items.map((item, i) => (
               <div key={i} className="admin__sub-card">
@@ -491,7 +524,7 @@ export function AdminDashboard() {
           </section>
 
           {/* Achievements */}
-          <section className="admin__section">
+          <section className="admin__section" hidden={activeSection !== 'achievements'}>
             <h2 className="admin__section-title"><i className="fa-solid fa-trophy"></i> Réalisations</h2>
             <button type="button" onClick={() => {
               const newItem: Achievement = {
@@ -561,7 +594,7 @@ export function AdminDashboard() {
           </section>
 
           {/* Contact */}
-          <section className="admin__section">
+          <section className="admin__section" hidden={activeSection !== 'contact'}>
             <h2 className="admin__section-title"><i className="fa-solid fa-envelope"></i> Contact</h2>
             <div className="admin__field">
               <label>Email de contact</label>
@@ -578,7 +611,7 @@ export function AdminDashboard() {
           </section>
 
           {/* Social Links */}
-          <section className="admin__section">
+          <section className="admin__section" hidden={activeSection !== 'social'}>
             <h2 className="admin__section-title"><i className="fa-solid fa-share-nodes"></i> Réseaux sociaux</h2>
             <div className="admin__field">
               <label>LinkedIn</label>
@@ -602,9 +635,10 @@ export function AdminDashboard() {
           <div className="admin__save-bar">
             {saved && <span className="admin__saved"><i className="fa-solid fa-check"></i> Modifications enregistrées</span>}
             {saveError && <span className="admin__save-error"><i className="fa-solid fa-circle-exclamation"></i> {saveError}</span>}
-            <button onClick={handleSaveClick} className="admin__btn admin__btn--primary" disabled={saving}>
+            <button type="button" onClick={handleSaveClick} className="admin__btn admin__btn--primary" disabled={saving}>
               {saving ? <><i className="fa-solid fa-spinner fa-spin"></i> Enregistrement...</> : <><i className="fa-solid fa-floppy-disk"></i> Enregistrer les modifications</>}
             </button>
+          </div>
           </div>
         </div>
       </main>
@@ -650,7 +684,7 @@ export function AdminDashboard() {
         .admin-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--color-text-secondary); font-size: 1.125rem; }
         .admin-loading i { font-size: 2rem; color: var(--color-accent); }
         .admin__header { position: sticky; top: 0; z-index: 100; background: color-mix(in srgb, var(--color-bg-elevated) 90%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--color-border-soft); }
-        .admin__header-inner { max-width: 900px; margin: 0 auto; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .admin__header-inner { max-width: 1280px; margin: 0 auto; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
         .admin__header-left { display: flex; align-items: center; gap: 12px; }
         .admin__logo { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: var(--radius-sm); background: var(--color-accent); color: #fff; font-weight: 700; font-size: 0.875rem; }
         .admin__title { font-size: 1.125rem; font-weight: 600; color: var(--color-text); }
@@ -662,13 +696,24 @@ export function AdminDashboard() {
         .admin__btn--primary { background: var(--color-accent); color: #fff; padding: 12px 24px; font-size: 0.875rem; }
         .admin__btn--primary:hover:not(:disabled) { background: var(--color-accent-hover); transform: translateY(-1px); box-shadow: var(--shadow-glow); }
         .admin__btn--primary:disabled { opacity: 0.6; cursor: not-allowed; }
-        .admin__main { padding: 32px 24px 80px; }
-        .admin__content { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+        .admin__main { max-width: 1280px; margin: 0 auto; padding: 32px 24px 80px; }
+        .admin__workspace { display: grid; grid-template-columns: 230px minmax(0, 1fr); align-items: start; gap: 28px; }
+        .admin__sidebar { position: sticky; top: 96px; display: flex; flex-direction: column; gap: 5px; padding: 14px; border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); background: var(--color-bg-card); box-shadow: var(--shadow-sm); }
+        .admin__sidebar-label { padding: 8px 10px 12px; color: var(--color-text-muted); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+        .admin__sidebar-link { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border-radius: var(--radius-md); color: var(--color-text-secondary); font-size: 0.8125rem; font-weight: 500; text-align: left; transition: background-color var(--transition), color var(--transition), transform var(--transition); }
+        .admin__sidebar-link i { width: 18px; color: var(--color-text-muted); text-align: center; }
+        .admin__sidebar-link:hover { color: var(--color-text); background: var(--color-surface); }
+        .admin__sidebar-link--active { color: var(--color-accent); background: var(--color-accent-soft); font-weight: 700; }
+        .admin__sidebar-link--active i { color: var(--color-accent); }
+        .admin__content { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+        .admin__section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 4px 2px; }
+        .admin__section-heading h2 { color: var(--color-text); font-size: clamp(1.35rem, 3vw, 1.8rem); }
+        .admin__eyebrow { margin-bottom: 4px; color: var(--color-accent); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+        .admin__draft-status { display: inline-flex; align-items: center; gap: 8px; color: var(--color-text-muted); font-size: 0.75rem; white-space: nowrap; }
+        .admin__draft-status i { color: var(--color-success); }
+        .admin__draft-status--restored { color: var(--color-accent); }
+        .admin__section[hidden] { display: none !important; }
         .admin__section { background: var(--color-bg-card); border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); padding: 28px; }
-        .admin__language-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
-        .admin__language-tab { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-secondary); font-size: 0.8125rem; transition: all var(--transition); }
-        .admin__language-tab:hover { color: var(--color-text); border-color: var(--color-accent); }
-        .admin__language-tab--active { color: var(--color-accent); border-color: var(--color-accent); background: var(--color-accent-soft); font-weight: 600; }
         .admin__copy-group { border-top: 1px solid var(--color-border-soft); padding: 16px 0; }
         .admin__copy-group:last-child { padding-bottom: 0; }
         .admin__copy-group summary { color: var(--color-text); font-size: 0.9375rem; font-weight: 600; cursor: pointer; margin-bottom: 16px; }
@@ -712,10 +757,22 @@ export function AdminDashboard() {
         .sudo-confirm { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: var(--radius-sm); background: var(--color-accent); color: #fff; font-size: 0.875rem; font-weight: 500; transition: all var(--transition); }
         .sudo-confirm:hover:not(:disabled) { background: var(--color-accent-hover); transform: translateY(-1px); }
         .sudo-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
+        @media (max-width: 800px) {
+          .admin__workspace { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+          .admin__sidebar { position: sticky; top: 76px; z-index: 80; display: grid; grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; gap: 4px; padding: 8px; }
+          .admin__sidebar-label { display: none; }
+          .admin__sidebar-link { width: auto; padding: 10px 12px; }
+          .admin__sidebar-link span { white-space: nowrap; }
+        }
         @media (max-width: 600px) {
           .admin__header-inner { flex-direction: column; align-items: flex-start; }
           .admin__header-actions { width: 100%; }
           .admin__btn--ghost { flex: 1; justify-content: center; }
+          .admin__main { padding: 20px 14px 60px; }
+          .admin__section { padding: 20px; }
+          .admin__section-heading { flex-direction: column; align-items: flex-start; }
+          .admin__save-bar { flex-direction: column; align-items: stretch; padding: 12px; }
+          .admin__save-bar .admin__btn { justify-content: center; }
         }
       `}</style>
     </div>

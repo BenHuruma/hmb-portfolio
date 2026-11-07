@@ -58,6 +58,28 @@ export interface SiteCopy {
   footer_brand_mark: string
   footer_credit_prefix: string
   language_selector_label: string
+  admin_login_welcome: string
+  admin_login_title: string
+  admin_login_subtitle: string
+  admin_login_forgot_subtitle: string
+  admin_login_google: string
+  admin_login_github: string
+  admin_login_or_email: string
+  admin_login_email: string
+  admin_login_password: string
+  admin_login_forgot_password: string
+  admin_login_submit: string
+  admin_login_loading: string
+  admin_login_back: string
+  admin_login_send_reset: string
+  admin_login_sending: string
+  admin_login_reset_step: string
+  admin_login_new_password: string
+  admin_login_update_password: string
+  admin_login_updating_password: string
+  admin_login_return: string
+  admin_login_reset_link_sent: string
+  admin_login_reset_verified: string
   theme_toggle_label: string
   menu_toggle_label: string
   certificate_enlarge_label: string
@@ -126,6 +148,28 @@ export const DEFAULT_SITE_COPY: SiteCopy = {
   footer_brand_mark: 'BH',
   footer_credit_prefix: 'Conçu et développé par',
   language_selector_label: 'Choisir la langue du portfolio',
+  admin_login_welcome: 'Bienvenue dans votre espace d’administration du portfolio',
+  admin_login_title: 'Administration',
+  admin_login_subtitle: 'Connectez-vous pour gérer votre portfolio',
+  admin_login_forgot_subtitle: 'Récupération du mot de passe',
+  admin_login_google: 'Continuer avec Google',
+  admin_login_github: 'Continuer avec GitHub',
+  admin_login_or_email: 'ou par email',
+  admin_login_email: 'Email',
+  admin_login_password: 'Mot de passe',
+  admin_login_forgot_password: 'Mot de passe oublié ?',
+  admin_login_submit: 'Se connecter',
+  admin_login_loading: 'Chargement...',
+  admin_login_back: 'Retour au site',
+  admin_login_send_reset: 'Envoyer le lien',
+  admin_login_sending: 'Envoi...',
+  admin_login_reset_step: 'Définissez votre nouveau mot de passe.',
+  admin_login_new_password: 'Nouveau mot de passe',
+  admin_login_update_password: 'Définir le nouveau mot de passe',
+  admin_login_updating_password: 'Mise à jour...',
+  admin_login_return: 'Retour à la connexion',
+  admin_login_reset_link_sent: 'Si cette adresse correspond à un compte, un lien de réinitialisation a été envoyé. Ouvrez-le sur le même navigateur pour définir un nouveau mot de passe.',
+  admin_login_reset_verified: 'Lien vérifié. Définissez maintenant votre nouveau mot de passe Supabase.',
   theme_toggle_label: 'Changer de thème',
   menu_toggle_label: 'Ouvrir le menu',
   certificate_enlarge_label: 'Agrandir',
@@ -171,6 +215,28 @@ export function mergeSiteCopy(value: unknown, fallback: SiteCopy = DEFAULT_SITE_
     contact_email_visitor_label: typeof stored.contact_email_visitor_label === 'string'
       ? stored.contact_email_visitor_label
       : fallback.contact_email_visitor_label,
+    admin_login_welcome: typeof stored.admin_login_welcome === 'string' ? stored.admin_login_welcome : fallback.admin_login_welcome,
+    admin_login_title: typeof stored.admin_login_title === 'string' ? stored.admin_login_title : fallback.admin_login_title,
+    admin_login_subtitle: typeof stored.admin_login_subtitle === 'string' ? stored.admin_login_subtitle : fallback.admin_login_subtitle,
+    admin_login_forgot_subtitle: typeof stored.admin_login_forgot_subtitle === 'string' ? stored.admin_login_forgot_subtitle : fallback.admin_login_forgot_subtitle,
+    admin_login_google: typeof stored.admin_login_google === 'string' ? stored.admin_login_google : fallback.admin_login_google,
+    admin_login_github: typeof stored.admin_login_github === 'string' ? stored.admin_login_github : fallback.admin_login_github,
+    admin_login_or_email: typeof stored.admin_login_or_email === 'string' ? stored.admin_login_or_email : fallback.admin_login_or_email,
+    admin_login_email: typeof stored.admin_login_email === 'string' ? stored.admin_login_email : fallback.admin_login_email,
+    admin_login_password: typeof stored.admin_login_password === 'string' ? stored.admin_login_password : fallback.admin_login_password,
+    admin_login_forgot_password: typeof stored.admin_login_forgot_password === 'string' ? stored.admin_login_forgot_password : fallback.admin_login_forgot_password,
+    admin_login_submit: typeof stored.admin_login_submit === 'string' ? stored.admin_login_submit : fallback.admin_login_submit,
+    admin_login_loading: typeof stored.admin_login_loading === 'string' ? stored.admin_login_loading : fallback.admin_login_loading,
+    admin_login_back: typeof stored.admin_login_back === 'string' ? stored.admin_login_back : fallback.admin_login_back,
+    admin_login_send_reset: typeof stored.admin_login_send_reset === 'string' ? stored.admin_login_send_reset : fallback.admin_login_send_reset,
+    admin_login_sending: typeof stored.admin_login_sending === 'string' ? stored.admin_login_sending : fallback.admin_login_sending,
+    admin_login_reset_step: typeof stored.admin_login_reset_step === 'string' ? stored.admin_login_reset_step : fallback.admin_login_reset_step,
+    admin_login_new_password: typeof stored.admin_login_new_password === 'string' ? stored.admin_login_new_password : fallback.admin_login_new_password,
+    admin_login_update_password: typeof stored.admin_login_update_password === 'string' ? stored.admin_login_update_password : fallback.admin_login_update_password,
+    admin_login_updating_password: typeof stored.admin_login_updating_password === 'string' ? stored.admin_login_updating_password : fallback.admin_login_updating_password,
+    admin_login_return: typeof stored.admin_login_return === 'string' ? stored.admin_login_return : fallback.admin_login_return,
+    admin_login_reset_link_sent: typeof stored.admin_login_reset_link_sent === 'string' ? stored.admin_login_reset_link_sent : fallback.admin_login_reset_link_sent,
+    admin_login_reset_verified: typeof stored.admin_login_reset_verified === 'string' ? stored.admin_login_reset_verified : fallback.admin_login_reset_verified,
     nav_links: Array.isArray(stored.nav_links) ? stored.nav_links : fallback.nav_links,
     about_highlights: Array.isArray(stored.about_highlights) ? stored.about_highlights : fallback.about_highlights,
     certificates: Array.isArray(stored.certificates) ? stored.certificates : fallback.certificates,

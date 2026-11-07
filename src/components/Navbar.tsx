@@ -7,11 +7,10 @@ interface NavbarProps {
   theme: 'dark' | 'light'
   toggleTheme: () => void
   copy: SiteCopy
-  language: Language
-  onLanguageChange: (language: Language) => void
+  defaultLanguage: Language
 }
 
-export function Navbar({ theme, toggleTheme, copy, language, onLanguageChange }: NavbarProps) {
+export function Navbar({ theme, toggleTheme, copy, defaultLanguage }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
   const [activeSection, setActiveSection] = useState('#hero')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -78,7 +77,7 @@ export function Navbar({ theme, toggleTheme, copy, language, onLanguageChange }:
         </ul>
 
         <div className="navbar__actions">
-          <LanguageSelector language={language} onChange={onLanguageChange} label={copy.language_selector_label} />
+          <LanguageSelector defaultLanguage={defaultLanguage} label={copy.language_selector_label} />
           <button className="navbar__theme-btn" onClick={toggleTheme} aria-label={copy.theme_toggle_label}>
             <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'}`}></i>
           </button>
