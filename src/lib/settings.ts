@@ -7,6 +7,12 @@ import { isSupportedLanguage } from './locales'
 
 const SETTINGS_REQUEST_TIMEOUT_MS = 12_000
 
+export interface SettingsLoadResult {
+  settings: SiteSettings
+  isFallback: boolean
+  error?: string
+}
+
 function mapRow(data: Record<string, unknown>): SiteSettings {
   const base: Omit<SiteSettings, 'default_language'> = {
     site_copy: mergeSiteCopy(data.site_copy),
@@ -39,8 +45,10 @@ function mapRow(data: Record<string, unknown>): SiteSettings {
   }
 }
 
-export async function getSettings(): Promise<SiteSettings> {
-  if (!isSupabaseConfigured) return DEFAULT_SITE_SETTINGS
+export async function loadSettings(): Promise<SettingsLoadResult> {
+  if (!isSupabaseConfigured) {
+    return { settings: DEFAULT_SITE_SETTINGS, isFallback: true, error: 'Supabase n’est pas configuré.' }
+  }
 
   try {
     const { data, error } = await withTimeout(
@@ -55,11 +63,19 @@ export async function getSettings(): Promise<SiteSettings> {
 
     if (error) throw error
     if (!data) throw new Error('No settings found')
-    return mapRow(data)
+    return { settings: mapRow(data), isFallback: false }
   } catch (error) {
     console.warn('Supabase settings unavailable; using built-in portfolio content.', error)
-    return DEFAULT_SITE_SETTINGS
+    return {
+      settings: DEFAULT_SITE_SETTINGS,
+      isFallback: true,
+      error: error instanceof Error ? error.message : 'Lecture Supabase indisponible.',
+    }
   }
+}
+
+export async function getSettings(): Promise<SiteSettings> {
+  return (await loadSettings()).settings
 }
 
 export async function updateSettings(settings: SiteSettings): Promise<void> {

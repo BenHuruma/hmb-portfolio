@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useReveal } from '../hooks/useReveal'
 import type { SiteSettings } from '../lib/types'
+import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
 interface ContactProps {
   settings: SiteSettings
@@ -12,14 +13,46 @@ export function Contact({ settings }: ContactProps) {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
+  const [website, setWebsite] = useState('')
+  const sentLabel = settings.site_copy.contact_form_sent_label === 'Message prêt à être envoyé'
+    ? 'Message envoyé avec succès'
+    : settings.site_copy.contact_form_sent_label
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const mailtoUrl = () => {
     const subject = encodeURIComponent(`${settings.site_copy.contact_email_subject_prefix} ${name || settings.site_copy.contact_email_visitor_label}`)
     const body = encodeURIComponent(`${settings.site_copy.contact_email_name_prefix}: ${name}\n${settings.site_copy.contact_email_address_prefix}: ${email}\n\n${message}`)
-    window.location.href = `mailto:${settings.contact_email}?subject=${subject}&body=${body}`
-    setSent(true)
-    setTimeout(() => setSent(false), 5000)
+    return `mailto:${settings.contact_email}?subject=${subject}&body=${body}`
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSendError(null)
+    setSent(false)
+    if (!isSupabaseConfigured) {
+      setSendError('L’envoi direct n’est pas disponible. Utilisez le lien de secours par e-mail.')
+      return
+    }
+
+    setSending(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('contact-message', {
+        body: { name, email, message, website },
+      })
+      if (error) throw error
+      if (!data?.ok) throw new Error(data?.error || 'Le message n’a pas pu être envoyé.')
+      setSent(true)
+      setName('')
+      setEmail('')
+      setMessage('')
+      setWebsite('')
+    } catch (error) {
+      console.error('Direct contact message failed.', error)
+      setSendError(error instanceof Error ? error.message : 'L’envoi direct a échoué. Utilisez le lien de secours par e-mail.')
+    } finally {
+      setSending(false)
+    }
   }
 
   const contactInfo = [
@@ -55,6 +88,10 @@ export function Contact({ settings }: ContactProps) {
           </div>
 
           <form className="contact__form" onSubmit={handleSubmit}>
+            <div className="contact__honeypot" aria-hidden="true">
+              <label htmlFor="website">Website</label>
+              <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+            </div>
             <div className="contact__field">
               <label htmlFor="name">{settings.site_copy.contact_form_name_label}</label>
               <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder={settings.site_copy.contact_form_name_placeholder} />
@@ -67,9 +104,14 @@ export function Contact({ settings }: ContactProps) {
               <label htmlFor="message">{settings.site_copy.contact_form_message_label}</label>
               <textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} required rows={5} placeholder={settings.site_copy.contact_form_message_placeholder} />
             </div>
-            <button type="submit" className="contact__submit">
-              {sent ? (<><i className="fa-solid fa-check"></i> {settings.site_copy.contact_form_sent_label}</>) : (<><i className="fa-solid fa-paper-plane"></i> {settings.site_copy.contact_form_send_label}</>)}
+            <button type="submit" className="contact__submit" disabled={sending}>
+              {sending ? <><i className="fa-solid fa-spinner fa-spin"></i> Envoi…</> : sent ? (<><i className="fa-solid fa-check"></i> {sentLabel}</>) : (<><i className="fa-solid fa-paper-plane"></i> {settings.site_copy.contact_form_send_label}</>)}
             </button>
+            <p className="contact__delivery-status" aria-live="polite">
+              {sendError && <span className="contact__delivery-error">{sendError}</span>}
+              {sent && <span className="contact__delivery-success">Message envoyé. Merci de m’avoir contacté.</span>}
+              <a href={mailtoUrl()} className="contact__fallback-link">{settings.site_copy.contact_form_mailto_fallback}</a>
+            </p>
           </form>
         </div>
       </div>
@@ -83,6 +125,7 @@ export function Contact({ settings }: ContactProps) {
         .contact__info-label { display: block; font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; margin-bottom: 2px; }
         .contact__info-value { display: block; font-size: 0.9375rem; color: var(--color-text); font-weight: 500; word-break: break-word; }
         .contact__form { background: var(--color-bg-card); border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); padding: 32px; display: flex; flex-direction: column; gap: 20px; }
+        .contact__honeypot { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
         .contact__field { display: flex; flex-direction: column; gap: 8px; }
         .contact__field label { font-size: 0.8125rem; font-weight: 500; color: var(--color-text-secondary); }
         .contact__field input, .contact__field textarea { padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); font-size: 0.9375rem; transition: border-color var(--transition), box-shadow var(--transition); resize: vertical; }
@@ -90,6 +133,12 @@ export function Contact({ settings }: ContactProps) {
         .contact__field input:focus, .contact__field textarea:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-soft); }
         .contact__submit { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 24px; border-radius: var(--radius-md); background: var(--color-accent); color: #fff; font-size: 0.9375rem; font-weight: 500; transition: all var(--transition); }
         .contact__submit:hover { background: var(--color-accent-hover); transform: translateY(-2px); box-shadow: var(--shadow-glow); }
+        .contact__submit:disabled { opacity: 0.65; cursor: wait; }
+        .contact__delivery-status { display: flex; flex-direction: column; gap: 8px; color: var(--color-text-muted); font-size: 0.8125rem; }
+        .contact__delivery-error { color: var(--color-error); }
+        .contact__delivery-success { color: var(--color-success); }
+        .contact__fallback-link { color: var(--color-text-secondary); text-decoration: underline; text-underline-offset: 3px; }
+        .contact__fallback-link:hover { color: var(--color-accent); }
       `}</style>
     </section>
   )

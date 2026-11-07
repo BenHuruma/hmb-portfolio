@@ -30,7 +30,7 @@ const draftStorageKey = (email: string) => `hmb-portfolio-admin-draft:${email.to
 
 export function AdminDashboard() {
   const { email, signOut } = useAuth()
-  const { settings, loading, reload } = useSettings()
+  const { settings, loading, reload, isFallback, loadError } = useSettings()
   const navigate = useNavigate()
   const [form, setForm] = useState<SiteSettings | null>(null)
   const [draftReady, setDraftReady] = useState(false)
@@ -106,6 +106,10 @@ export function AdminDashboard() {
   }
 
   const handleSaveClick = (action: SudoAction = 'save') => {
+    if (isFallback) {
+      setSaveError(`Enregistrement désactivé : les réglages Supabase n’ont pas pu être chargés${loadError ? ` (${loadError})` : ''}. Réessayez de recharger la page avant de modifier le contenu.`)
+      return
+    }
     setSudoAction(action)
     setSudoOpen(true)
     setSudoPassword('')
@@ -182,6 +186,11 @@ export function AdminDashboard() {
 
   const handlePhotoSelection = (file: File | undefined) => {
     if (!file) return
+    if (isFallback) {
+      setPhotoError('Téléversement désactivé : les réglages Supabase n’ont pas pu être chargés. Rechargez la page lorsque la connexion sera rétablie.')
+      if (photoInputRef.current) photoInputRef.current.value = ''
+      return
+    }
     const validationError = validatePortfolioPhoto(file)
     if (validationError) {
       setPhotoError(validationError)
@@ -244,6 +253,10 @@ export function AdminDashboard() {
           </aside>
 
           <div className="admin__content">
+          {isFallback && <div className="admin__data-warning" role="alert">
+            <i className="fa-solid fa-triangle-exclamation"></i>
+            <span>Les données affichées sont des valeurs de secours, pas celles chargées depuis Supabase. L’enregistrement et le téléversement sont désactivés pour éviter d’écraser votre contenu.</span>
+          </div>}
           <div className="admin__section-heading">
             <div>
               <p className="admin__eyebrow">Éditeur du portfolio</p>
@@ -299,7 +312,7 @@ export function AdminDashboard() {
                   accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
                   onChange={(event) => handlePhotoSelection(event.target.files?.[0])}
                 />
-                <button type="button" className="admin__upload-btn" onClick={() => photoInputRef.current?.click()} disabled={photoUploading || saving}>
+                <button type="button" className="admin__upload-btn" onClick={() => photoInputRef.current?.click()} disabled={photoUploading || saving || isFallback}>
                   {photoUploading ? <><i className="fa-solid fa-spinner fa-spin"></i> Téléversement…</> : <><i className="fa-solid fa-folder-open"></i> Parcourir les photos</>}
                 </button>
                 <p className="admin__section-hint">Formats acceptés : JPG/JPEG, PNG, WebP, GIF et AVIF. Taille maximale : 10 Mo. Le téléversement demande une vérification sudo ; cliquez ensuite sur « Enregistrer les modifications » pour publier la nouvelle photo.</p>
@@ -729,7 +742,7 @@ export function AdminDashboard() {
           <div className="admin__save-bar">
             {saved && <span className="admin__saved"><i className="fa-solid fa-check"></i> Modifications enregistrées</span>}
             {saveError && <span className="admin__save-error"><i className="fa-solid fa-circle-exclamation"></i> {saveError}</span>}
-            <button type="button" onClick={() => handleSaveClick()} className="admin__btn admin__btn--primary" disabled={saving}>
+            <button type="button" onClick={() => handleSaveClick()} className="admin__btn admin__btn--primary" disabled={saving || isFallback}>
               {saving ? <><i className="fa-solid fa-spinner fa-spin"></i> Enregistrement...</> : <><i className="fa-solid fa-floppy-disk"></i> Enregistrer les modifications</>}
             </button>
           </div>
@@ -800,6 +813,7 @@ export function AdminDashboard() {
         .admin__sidebar-link--active { color: var(--color-accent); background: var(--color-accent-soft); font-weight: 700; }
         .admin__sidebar-link--active i { color: var(--color-accent); }
         .admin__content { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+        .admin__data-warning { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; border: 1px solid var(--color-warning); border-radius: var(--radius-md); background: rgba(245,158,11,0.1); color: var(--color-warning); font-size: 0.875rem; line-height: 1.5; }
         .admin__section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 4px 2px; }
         .admin__section-heading h2 { color: var(--color-text); font-size: clamp(1.35rem, 3vw, 1.8rem); }
         .admin__eyebrow { margin-bottom: 4px; color: var(--color-accent); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }

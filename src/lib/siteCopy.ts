@@ -87,6 +87,7 @@ export interface SiteCopy {
   contact_email_name_prefix: string
   contact_email_address_prefix: string
   contact_email_visitor_label: string
+  contact_form_mailto_fallback: string
 }
 
 export const DEFAULT_SITE_COPY: SiteCopy = {
@@ -144,7 +145,7 @@ export const DEFAULT_SITE_COPY: SiteCopy = {
   contact_form_email_placeholder: 'vous@exemple.com',
   contact_form_message_placeholder: 'Votre message...',
   contact_form_send_label: 'Envoyer le message',
-  contact_form_sent_label: 'Message prêt à être envoyé',
+  contact_form_sent_label: 'Message envoyé avec succès',
   footer_brand_mark: 'BH',
   footer_credit_prefix: 'Conçu et développé par',
   language_selector_label: 'Choisir la langue du portfolio',
@@ -177,6 +178,7 @@ export const DEFAULT_SITE_COPY: SiteCopy = {
   contact_email_name_prefix: 'Nom',
   contact_email_address_prefix: 'Email',
   contact_email_visitor_label: 'un visiteur',
+  contact_form_mailto_fallback: 'Ou envoyez le message avec votre application de messagerie',
 }
 
 /** Merge persisted JSON with defaults so newly added copy fields remain backward-compatible. */

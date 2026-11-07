@@ -129,6 +129,8 @@ export function LanguageSelector({ defaultLanguage, label }: LanguageSelectorPro
   const [loading, setLoading] = useState(false)
   const [unavailable, setUnavailable] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
   const selected = SUPPORTED_LANGUAGES.find((item) => item.code === language) ?? SUPPORTED_LANGUAGES[0]
 
   useEffect(() => {
@@ -143,16 +145,17 @@ export function LanguageSelector({ defaultLanguage, label }: LanguageSelectorPro
     const closeOnOutsideClick = (event: PointerEvent) => {
       if (event.target instanceof Node && !rootRef.current?.contains(event.target)) setOpen(false)
     }
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
     document.addEventListener('pointerdown', closeOnOutsideClick)
-    document.addEventListener('keydown', closeOnEscape)
     return () => {
       document.removeEventListener('pointerdown', closeOnOutsideClick)
-      document.removeEventListener('keydown', closeOnEscape)
     }
   }, [])
+
+  useEffect(() => {
+    if (!open) return
+    const selectedIndex = SUPPORTED_LANGUAGES.findIndex((item) => item.code === language)
+    optionRefs.current[selectedIndex]?.focus()
+  }, [open, language])
 
   useEffect(() => {
     if (language === 'fr') return
@@ -180,15 +183,38 @@ export function LanguageSelector({ defaultLanguage, label }: LanguageSelectorPro
     window.location.reload()
   }
 
+  const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Tab') {
+      setOpen(false)
+      return
+    }
+    const currentIndex = optionRefs.current.indexOf(document.activeElement as HTMLButtonElement)
+    let nextIndex: number | null = null
+    if (event.key === 'ArrowDown') nextIndex = (currentIndex + 1 + SUPPORTED_LANGUAGES.length) % SUPPORTED_LANGUAGES.length
+    if (event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + SUPPORTED_LANGUAGES.length) % SUPPORTED_LANGUAGES.length
+    if (event.key === 'Home') nextIndex = 0
+    if (event.key === 'End') nextIndex = SUPPORTED_LANGUAGES.length - 1
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      setOpen(false)
+      triggerRef.current?.focus()
+      return
+    }
+    if (nextIndex !== null) {
+      event.preventDefault()
+      optionRefs.current[nextIndex]?.focus()
+    }
+  }
+
   return (
     <div className="language-selector" ref={rootRef}>
-      <button type="button" className="language-selector__trigger" aria-label={label} aria-expanded={open} aria-haspopup="listbox" title={unavailable ? 'Le service de traduction est indisponible' : label} onClick={() => setOpen((value) => !value)}>
+      <button ref={triggerRef} type="button" className="language-selector__trigger" aria-label={label} aria-expanded={open} aria-haspopup="menu" aria-controls="portfolio-language-menu" title={unavailable ? 'Le service de traduction est indisponible' : label} onClick={() => setOpen((value) => !value)}>
         <i className={`fa-solid ${loading ? 'fa-spinner fa-spin' : 'fa-globe'}`} aria-hidden="true"></i>
         <span>{selected.flag}</span><span className="language-selector__code">{selected.code.toUpperCase()}</span>
         <i className={`fa-solid ${open ? 'fa-chevron-up' : 'fa-chevron-down'} language-selector__chevron`} aria-hidden="true"></i>
       </button>
-      {open && <div className="language-selector__menu" role="listbox" aria-label={label}>
-        {SUPPORTED_LANGUAGES.map((item) => <button type="button" role="option" aria-selected={item.code === language} className={`language-selector__option${item.code === language ? ' language-selector__option--active' : ''}`} key={item.code} onClick={() => { chooseLanguage(item.code); setOpen(false) }}>
+      {open && <div id="portfolio-language-menu" className="language-selector__menu" role="menu" aria-label={label} onKeyDown={handleMenuKeyDown}>
+        {SUPPORTED_LANGUAGES.map((item, index) => <button ref={(element) => { optionRefs.current[index] = element }} type="button" role="menuitemradio" aria-checked={item.code === language} tabIndex={-1} className={`language-selector__option${item.code === language ? ' language-selector__option--active' : ''}`} key={item.code} onClick={() => { chooseLanguage(item.code); setOpen(false); triggerRef.current?.focus() }}>
           <span className="language-selector__flag" aria-hidden="true">{item.flag}</span><span>{item.nativeName}</span>
           {item.code === language && <i className="fa-solid fa-check" aria-hidden="true"></i>}
         </button>)}

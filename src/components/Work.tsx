@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useReveal } from '../hooks/useReveal'
 import { sortAchievementsNewestFirst } from '../lib/achievements'
 import type { SiteSettings } from '../lib/types'
@@ -22,6 +22,44 @@ function resolveCertificateUrl(url: string): string {
 export function Work({ settings }: WorkProps) {
   const { ref, visible } = useReveal<HTMLDivElement>()
   const [modalImg, setModalImg] = useState<{ src: string; alt: string } | null>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const openerRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!modalImg) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    closeButtonRef.current?.focus()
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setModalImg(null)
+        return
+      }
+      if (event.key !== 'Tab') return
+      const focusable = modalRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])')
+      if (!focusable?.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+      openerRef.current?.focus()
+      openerRef.current = null
+    }
+  }, [modalImg])
 
   return (
     <section id="work" className="section" ref={ref}>
@@ -41,10 +79,12 @@ export function Work({ settings }: WorkProps) {
               </div>
               <h3 className="work__card-title">{item.title}</h3>
               <p className="work__card-desc">{item.description}</p>
-              <a href={item.link_url} target="_blank" rel="noopener noreferrer" className="work__card-link">
-                {item.link_label}
-                <i className="fa-solid fa-arrow-up-right-from-square"></i>
-              </a>
+              {item.link_url.trim() && item.link_label.trim() && (
+                <a href={item.link_url} target="_blank" rel="noopener noreferrer" className="work__card-link">
+                  {item.link_label}
+                  <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+              )}
             </article>
           ))}
         </div>
@@ -54,8 +94,11 @@ export function Work({ settings }: WorkProps) {
           <div className="work__cert-grid">
             {settings.site_copy.certificates.map((cert, index) => {
               const image = { src: resolveCertificateUrl(cert.image_url), alt: cert.alt }
-              return <button key={`${cert.image_url}-${index}`} className="work__cert-img-btn" onClick={() => setModalImg(image)} aria-label={`${settings.site_copy.certificate_enlarge_label}: ${cert.title || cert.alt}`}>
-                <img src={image.src} alt={image.alt} />
+              return <button key={`${cert.image_url}-${index}`} className="work__cert-img-btn" onClick={(event) => {
+                openerRef.current = event.currentTarget
+                setModalImg(image)
+              }} aria-label={`${settings.site_copy.certificate_enlarge_label}: ${cert.title || cert.alt}`}>
+                <img src={image.src} alt={image.alt} loading="lazy" decoding="async" />
                 {cert.title && <span>{cert.title}</span>}
               </button>
             })}
@@ -65,8 +108,10 @@ export function Work({ settings }: WorkProps) {
 
       {modalImg && (
         <div className="work__modal" onClick={() => setModalImg(null)}>
-          <button className="work__modal-close" aria-label="Fermer"><i className="fa-solid fa-xmark"></i></button>
-          <img src={modalImg.src} alt={modalImg.alt} />
+          <div className="work__modal-dialog" ref={modalRef} role="dialog" aria-modal="true" aria-label={modalImg.alt} onClick={(event) => event.stopPropagation()}>
+            <button ref={closeButtonRef} type="button" className="work__modal-close" aria-label="Fermer l’aperçu" onClick={() => setModalImg(null)}><i className="fa-solid fa-xmark"></i></button>
+            <img src={modalImg.src} alt={modalImg.alt} />
+          </div>
         </div>
       )}
 
@@ -93,7 +138,8 @@ export function Work({ settings }: WorkProps) {
         .work__cert-img-btn span { display: block; padding: 12px 16px; color: var(--color-text-secondary); font-size: 0.875rem; text-align: left; }
         .work__modal { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.88); display: flex; align-items: center; justify-content: center; padding: 32px; animation: fade-in 0.25s ease; }
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        .work__modal img { max-width: 100%; max-height: 90vh; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); }
+        .work__modal-dialog { position: relative; display: flex; align-items: center; justify-content: center; max-width: 100%; max-height: 90vh; }
+        .work__modal-dialog img { max-width: 100%; max-height: 90vh; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); }
         .work__modal-close { position: absolute; top: 24px; right: 24px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.1); color: #fff; font-size: 1.25rem; display: flex; align-items: center; justify-content: center; transition: background-color var(--transition); }
         .work__modal-close:hover { background: rgba(255,255,255,0.2); }
       `}</style>
