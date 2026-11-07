@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useSettings } from '../hooks/useSettings'
 import { updateSettings } from '../lib/settings'
-import { verifySudoPassword } from '../lib/auth'
+import { verifySudoPassword, type AuthResult } from '../lib/auth'
 import { sortAchievementsWithSourceIndex } from '../lib/achievements'
 import type { SiteSettings, EducationItem, Achievement } from '../lib/types'
 import type { SiteCopy } from '../lib/siteCopy'
 import { SUPPORTED_LANGUAGES, type Language } from '../lib/locales'
+import { uploadPortfolioPhoto, validatePortfolioPhoto } from '../lib/portfolioPhotos'
 
 type AdminSectionId = 'language' | 'appearance' | 'copy' | 'hero' | 'about' | 'skills' | 'education' | 'achievements' | 'contact' | 'social'
+type SudoAction = 'save' | 'photo-upload'
 
 const ADMIN_SECTIONS: Array<{ id: AdminSectionId; label: string; icon: string }> = [
   { id: 'language', label: 'Langue', icon: 'fa-solid fa-language' },
@@ -41,6 +43,12 @@ export function AdminDashboard() {
   const [sudoPassword, setSudoPassword] = useState('')
   const [sudoError, setSudoError] = useState<string | null>(null)
   const [sudoVerifying, setSudoVerifying] = useState(false)
+  const [sudoAction, setSudoAction] = useState<SudoAction>('save')
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null)
+  const [photoMode, setPhotoMode] = useState<'url' | 'upload'>('url')
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!settings || !email || draftReady) return
@@ -62,6 +70,15 @@ export function AdminDashboard() {
       console.warn('Unable to restore the local admin draft.', error)
     }
     if (!restored) setForm({ ...settings })
+    const restoredPhoto = restored ? (() => {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(draftStorageKey(email)) || '{}') as { form?: Partial<SiteSettings> }
+        return parsed.form?.hero_photo_url ?? settings.hero_photo_url
+      } catch {
+        return settings.hero_photo_url
+      }
+    })() : settings.hero_photo_url
+    setPhotoMode(restoredPhoto.includes('/storage/v1/object/public/portfolio-photos/') ? 'upload' : 'url')
     setDraftRestored(restored)
     setDraftReady(true)
   }, [settings, email, draftReady])
@@ -88,7 +105,8 @@ export function AdminDashboard() {
     setForm((prev) => prev ? { ...prev, site_copy: { ...prev.site_copy, [key]: value } } : prev)
   }
 
-  const handleSaveClick = () => {
+  const handleSaveClick = (action: SudoAction = 'save') => {
+    setSudoAction(action)
     setSudoOpen(true)
     setSudoPassword('')
     setSudoError(null)
@@ -98,7 +116,14 @@ export function AdminDashboard() {
     if (!form) return
     setSudoVerifying(true)
     setSudoError(null)
-    const result = await verifySudoPassword(sudoPassword)
+    let result: AuthResult
+    try {
+      result = await verifySudoPassword(sudoPassword)
+    } catch (error) {
+      setSudoVerifying(false)
+      setSudoError(error instanceof Error ? `Vérification Supabase impossible : ${error.message}` : 'Vérification Supabase impossible. Vérifiez la connexion et réessayez.')
+      return
+    }
     if (!result.success) {
       setSudoVerifying(false)
       setSudoError(result.error || 'Vérification impossible')
@@ -106,6 +131,20 @@ export function AdminDashboard() {
     }
     setSaving(true)
     try {
+      if (sudoAction === 'photo-upload') {
+        if (!pendingPhoto) throw new Error('Choisissez une photo avant de continuer.')
+        setPhotoUploading(true)
+        const photoUrl = await uploadPortfolioPhoto(pendingPhoto)
+        update('hero_photo_url', photoUrl)
+        setPhotoMode('upload')
+        setPendingPhoto(null)
+        setPhotoError(null)
+        setSaveError('Photo téléversée. Cliquez sur « Enregistrer les modifications » pour publier ce changement.')
+        setTimeout(() => setSaveError(null), 7000)
+        setSudoOpen(false)
+        setSudoPassword('')
+        return
+      }
       await updateSettings(form)
       if (email) localStorage.removeItem(draftStorageKey(email))
       setDraftRestored(false)
@@ -116,11 +155,18 @@ export function AdminDashboard() {
       setSudoPassword('')
     } catch (err) {
       console.error('settings update failed', err)
-      setSaveError("Échec de l'enregistrement. Réessayez.")
-      setTimeout(() => setSaveError(null), 5000)
-      setSudoOpen(false)
+      const message = err instanceof Error ? err.message : "Échec de l'enregistrement. Réessayez."
+      if (sudoAction === 'photo-upload') {
+        setPhotoError(message)
+        setSudoError(message)
+      }
+      else {
+        setSaveError(message)
+        setTimeout(() => setSaveError(null), 5000)
+      }
     } finally {
       setSaving(false)
+      setPhotoUploading(false)
       setSudoVerifying(false)
     }
   }
@@ -130,7 +176,21 @@ export function AdminDashboard() {
       setSudoOpen(false)
       setSudoPassword('')
       setSudoError(null)
+      if (sudoAction === 'photo-upload') setPendingPhoto(null)
     }
+  }
+
+  const handlePhotoSelection = (file: File | undefined) => {
+    if (!file) return
+    const validationError = validatePortfolioPhoto(file)
+    if (validationError) {
+      setPhotoError(validationError)
+      if (photoInputRef.current) photoInputRef.current.value = ''
+      return
+    }
+    setPhotoError(null)
+    setPendingPhoto(file)
+    handleSaveClick('photo-upload')
   }
 
   const sortedAchievements = form ? sortAchievementsWithSourceIndex(form.achievements) : []
@@ -214,10 +274,44 @@ export function AdminDashboard() {
           {/* Photo */}
           <section className="admin__section" hidden={activeSection !== 'appearance'}>
             <h2 className="admin__section-title"><i className="fa-solid fa-image"></i> Photo d'accueil</h2>
-            <div className="admin__field">
-              <label>Photo d'accueil (URL)</label>
-              <input className="admin__input" type="url" value={form.hero_photo_url} onChange={(e) => update('hero_photo_url', e.target.value)} placeholder="https://... (ou laissez vide pour la photo par défaut)" />
+            <div className="admin__photo-tabs" role="group" aria-label="Source de la photo">
+              <button type="button" className={`admin__photo-tab${photoMode === 'url' ? ' admin__photo-tab--active' : ''}`} aria-pressed={photoMode === 'url'} onClick={() => setPhotoMode('url')}>
+                <i className="fa-solid fa-link"></i> Utiliser une URL
+              </button>
+              <button type="button" className={`admin__photo-tab${photoMode === 'upload' ? ' admin__photo-tab--active' : ''}`} aria-pressed={photoMode === 'upload'} onClick={() => setPhotoMode('upload')}>
+                <i className="fa-solid fa-cloud-arrow-up"></i> Téléverser une photo
+              </button>
             </div>
+            {photoMode === 'url' ? (
+              <div className="admin__field">
+                <label htmlFor="hero-photo-url">Adresse de la photo d’accueil</label>
+                <input id="hero-photo-url" className="admin__input" type="url" value={form.hero_photo_url.startsWith(`${import.meta.env.BASE_URL}ma_photo.WebP`) ? '' : form.hero_photo_url} onChange={(e) => update('hero_photo_url', e.target.value)} placeholder="https://… (vide = photo par défaut)" />
+                <p className="admin__section-hint">La photo doit être accessible publiquement par URL HTTPS.</p>
+              </div>
+            ) : (
+              <div className="admin__field">
+                <label htmlFor="hero-photo-file">Choisir une photo depuis votre appareil</label>
+                <input
+                  ref={photoInputRef}
+                  id="hero-photo-file"
+                  className="admin__file-input"
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
+                  onChange={(event) => handlePhotoSelection(event.target.files?.[0])}
+                />
+                <button type="button" className="admin__upload-btn" onClick={() => photoInputRef.current?.click()} disabled={photoUploading || saving}>
+                  {photoUploading ? <><i className="fa-solid fa-spinner fa-spin"></i> Téléversement…</> : <><i className="fa-solid fa-folder-open"></i> Parcourir les photos</>}
+                </button>
+                <p className="admin__section-hint">Formats acceptés : JPG/JPEG, PNG, WebP, GIF et AVIF. Taille maximale : 10 Mo. Le téléversement demande une vérification sudo ; cliquez ensuite sur « Enregistrer les modifications » pour publier la nouvelle photo.</p>
+              </div>
+            )}
+            {photoError && <p className="admin__upload-error" role="alert"><i className="fa-solid fa-circle-exclamation"></i>{photoError}</p>}
+            {form.hero_photo_url && (
+              <div className="admin__photo-preview">
+                <img src={form.hero_photo_url} alt="Aperçu de la photo d’accueil" />
+                <span>Aperçu de la photo enregistrée ou en brouillon</span>
+              </div>
+            )}
           </section>
 
           <section className="admin__section" hidden={activeSection !== 'copy'}>
@@ -635,7 +729,7 @@ export function AdminDashboard() {
           <div className="admin__save-bar">
             {saved && <span className="admin__saved"><i className="fa-solid fa-check"></i> Modifications enregistrées</span>}
             {saveError && <span className="admin__save-error"><i className="fa-solid fa-circle-exclamation"></i> {saveError}</span>}
-            <button type="button" onClick={handleSaveClick} className="admin__btn admin__btn--primary" disabled={saving}>
+            <button type="button" onClick={() => handleSaveClick()} className="admin__btn admin__btn--primary" disabled={saving}>
               {saving ? <><i className="fa-solid fa-spinner fa-spin"></i> Enregistrement...</> : <><i className="fa-solid fa-floppy-disk"></i> Enregistrer les modifications</>}
             </button>
           </div>
@@ -649,8 +743,8 @@ export function AdminDashboard() {
             <div className="sudo-header">
               <span className="sudo-icon"><i className="fa-solid fa-shield-halved"></i></span>
               <div>
-                <h3 className="sudo-title">Vérification administrateur</h3>
-                <p className="sudo-subtitle">Entrez votre mot de passe Supabase. Le mot de passe de votre compte Google ou GitHub ne fonctionne pas ici. Si vous n’avez pas de mot de passe Supabase, déconnectez-vous puis utilisez « Mot de passe oublié ? » sur la page de connexion pour en définir un.</p>
+                <h3 className="sudo-title">{sudoAction === 'photo-upload' ? 'Autoriser le téléversement' : 'Vérification administrateur'}</h3>
+                <p className="sudo-subtitle">{sudoAction === 'photo-upload' ? `Confirmez votre identité avant d’envoyer « ${pendingPhoto?.name ?? 'la photo'} » vers le stockage public du portfolio.` : 'Entrez votre mot de passe Supabase. Le mot de passe de votre compte Google ou GitHub ne fonctionne pas ici. Si vous n’avez pas de mot de passe Supabase, déconnectez-vous puis utilisez « Mot de passe oublié ? » sur la page de connexion pour en définir un.'}</p>
               </div>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="sudo-form">
@@ -671,7 +765,7 @@ export function AdminDashboard() {
               <div className="sudo-actions">
                 <button type="button" onClick={closeSudo} className="sudo-cancel" disabled={sudoVerifying || saving}>Annuler</button>
                 <button type="submit" className="sudo-confirm" disabled={sudoVerifying || saving || !sudoPassword}>
-                  {sudoVerifying || saving ? <><i className="fa-solid fa-spinner fa-spin"></i> Vérification...</> : <><i className="fa-solid fa-check"></i> Confirmer et enregistrer</>}
+                  {sudoVerifying || saving ? <><i className="fa-solid fa-spinner fa-spin"></i> {sudoAction === 'photo-upload' ? 'Vérification et téléversement…' : 'Vérification...'}</> : <><i className="fa-solid fa-check"></i> {sudoAction === 'photo-upload' ? 'Autoriser le téléversement' : 'Confirmer et enregistrer'}</>}
                 </button>
               </div>
             </form>
@@ -722,6 +816,17 @@ export function AdminDashboard() {
         .admin__section-title { font-size: 1.0625rem; font-weight: 600; color: var(--color-text); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
         .admin__section-title i { color: var(--color-accent); font-size: 1rem; }
         .admin__section-hint { font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 16px; }
+        .admin__photo-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .admin__photo-tab { display: inline-flex; align-items: center; gap: 8px; padding: 11px 15px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-secondary); font-size: 0.8125rem; transition: all var(--transition); }
+        .admin__photo-tab:hover { border-color: var(--color-accent); color: var(--color-text); }
+        .admin__photo-tab--active { border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-accent); font-weight: 600; }
+        .admin__file-input { display: none; }
+        .admin__upload-btn { display: inline-flex; align-items: center; gap: 9px; width: fit-content; padding: 11px 16px; border-radius: var(--radius-md); background: var(--color-accent); color: #fff; font-size: 0.8125rem; font-weight: 600; transition: all var(--transition); }
+        .admin__upload-btn:hover:not(:disabled) { background: var(--color-accent-hover); transform: translateY(-1px); }
+        .admin__upload-btn:disabled { opacity: 0.6; cursor: wait; }
+        .admin__upload-error { display: flex; align-items: center; gap: 8px; color: var(--color-error); font-size: 0.8125rem; }
+        .admin__photo-preview { display: flex; align-items: center; gap: 16px; margin-top: 20px; padding: 12px; border: 1px solid var(--color-border-soft); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text-secondary); font-size: 0.8125rem; }
+        .admin__photo-preview img { width: 76px; height: 76px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--color-border); }
         .admin__field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
         .admin__field:last-child { margin-bottom: 0; }
         .admin__field label { font-size: 0.75rem; font-weight: 500; color: var(--color-text-secondary); }
