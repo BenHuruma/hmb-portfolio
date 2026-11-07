@@ -2,7 +2,7 @@ import type { SiteSettings } from './types'
 import { DEFAULT_SITE_COPY } from './siteCopy'
 
 /** Static content keeps the public portfolio available without Supabase. */
-const BASE_SITE_SETTINGS: Omit<SiteSettings, 'default_language' | 'translations'> = {
+const BASE_SITE_SETTINGS: Omit<SiteSettings, 'default_language' | 'security_captcha_enabled' | 'security_honeypot_enabled' | 'turnstile_site_key'> = {
   site_copy: DEFAULT_SITE_COPY,
   hero_name: 'Benjamin Huruma',
   hero_subtitle: 'Ingénieur logiciel et Développeur Web, passionné par la blockchain, la cybersécurité et la création de solutions numériques durables.',
@@ -82,4 +82,7 @@ Mon objectif est de développer des applications fiables, cohérentes et utiles 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   ...BASE_SITE_SETTINGS,
   default_language: 'fr',
+  security_captcha_enabled: true,
+  security_honeypot_enabled: true,
+  turnstile_site_key: '',
 }

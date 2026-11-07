@@ -2,6 +2,9 @@ import type { SiteCopy } from './siteCopy'
 import type { Language } from './locales'
 export interface SiteSettings {
   default_language: Language
+  security_captcha_enabled: boolean
+  security_honeypot_enabled: boolean
+  turnstile_site_key: string
   site_copy: SiteCopy
   hero_name: string
   hero_subtitle: string

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useReveal } from '../hooks/useReveal'
 import type { SiteSettings } from '../lib/types'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { TurnstileWidget } from './TurnstileWidget'
 
 interface ContactProps {
   settings: SiteSettings
@@ -16,6 +17,8 @@ export function Contact({ settings }: ContactProps) {
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const [website, setWebsite] = useState('')
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaUnavailable, setCaptchaUnavailable] = useState(false)
   const sentLabel = settings.site_copy.contact_form_sent_label === 'Message prêt à être envoyé'
     ? 'Message envoyé avec succès'
     : settings.site_copy.contact_form_sent_label
@@ -26,6 +29,11 @@ export function Contact({ settings }: ContactProps) {
     return `mailto:${settings.contact_email}?subject=${subject}&body=${body}`
   }
 
+  const useMailtoFallback = (reason: string) => {
+    setSendError(reason)
+    window.location.assign(mailtoUrl())
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSendError(null)
@@ -34,19 +42,49 @@ export function Contact({ settings }: ContactProps) {
       setSendError('L’envoi direct n’est pas disponible. Utilisez le lien de secours par e-mail.')
       return
     }
+    if (settings.security_captcha_enabled && (!settings.turnstile_site_key || !captchaToken)) {
+      setSendError(settings.turnstile_site_key
+        ? 'Terminez la vérification CAPTCHA avant l’envoi.'
+        : 'La vérification anti-robot n’est pas encore configurée. Utilisez le lien e-mail de secours.')
+      return
+    }
 
     setSending(true)
     try {
       const { data, error } = await supabase.functions.invoke('contact-message', {
-        body: { name, email, message, website },
+        body: {
+          name,
+          email,
+          message,
+          captchaToken,
+          ...(settings.security_honeypot_enabled ? { website } : {}),
+        },
       })
-      if (error) throw error
+      if (error) {
+        const context = (error as { context?: Response }).context
+        const status = context?.status
+        const payload = context ? await context.clone().json().catch(() => null) as { error?: string; fallback?: boolean } | null : null
+        if (payload?.fallback) {
+          useMailtoFallback(payload.error || 'Le service d’envoi est indisponible après deux tentatives. Votre message est repris dans votre application e-mail.')
+          return
+        }
+        if (status !== undefined) {
+          throw new Error(payload?.error || 'La vérification de sécurité a échoué. Vérifiez le CAPTCHA et réessayez.')
+        }
+        useMailtoFallback('Le service direct est momentanément indisponible. Votre message est repris dans votre application e-mail.')
+        return
+      }
+      if (data?.fallback) {
+        useMailtoFallback(data.error || 'Le service d’envoi est indisponible après deux tentatives. Votre message est repris dans votre application e-mail.')
+        return
+      }
       if (!data?.ok) throw new Error(data?.error || 'Le message n’a pas pu être envoyé.')
       setSent(true)
       setName('')
       setEmail('')
       setMessage('')
       setWebsite('')
+      setCaptchaToken(null)
     } catch (error) {
       console.error('Direct contact message failed.', error)
       setSendError(error instanceof Error ? error.message : 'L’envoi direct a échoué. Utilisez le lien de secours par e-mail.')
@@ -88,10 +126,10 @@ export function Contact({ settings }: ContactProps) {
           </div>
 
           <form className="contact__form" onSubmit={handleSubmit}>
-            <div className="contact__honeypot" aria-hidden="true">
+            {settings.security_honeypot_enabled && <div className="contact__honeypot" aria-hidden="true">
               <label htmlFor="website">Website</label>
               <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
-            </div>
+            </div>}
             <div className="contact__field">
               <label htmlFor="name">{settings.site_copy.contact_form_name_label}</label>
               <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder={settings.site_copy.contact_form_name_placeholder} />
@@ -104,7 +142,20 @@ export function Contact({ settings }: ContactProps) {
               <label htmlFor="message">{settings.site_copy.contact_form_message_label}</label>
               <textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} required rows={5} placeholder={settings.site_copy.contact_form_message_placeholder} />
             </div>
-            <button type="submit" className="contact__submit" disabled={sending}>
+            {settings.security_captcha_enabled && settings.turnstile_site_key && (
+              <div className="contact__captcha">
+                <TurnstileWidget
+                  siteKey={settings.turnstile_site_key}
+                  onToken={(token) => { setCaptchaToken(token); setCaptchaUnavailable(false) }}
+                  onError={() => { setCaptchaToken(null); setCaptchaUnavailable(true) }}
+                />
+                {captchaUnavailable && <span className="contact__delivery-error">La vérification CAPTCHA est indisponible. Utilisez le lien e-mail de secours.</span>}
+              </div>
+            )}
+            {settings.security_captcha_enabled && !settings.turnstile_site_key && (
+              <p className="contact__delivery-error" role="status">La vérification anti-robot est activée mais n’est pas configurée. L’envoi direct est bloqué ; le lien e-mail de secours reste disponible.</p>
+            )}
+            <button type="submit" className="contact__submit" disabled={sending || (settings.security_captcha_enabled && (!settings.turnstile_site_key || !captchaToken || captchaUnavailable))}>
               {sending ? <><i className="fa-solid fa-spinner fa-spin"></i> Envoi…</> : sent ? (<><i className="fa-solid fa-check"></i> {sentLabel}</>) : (<><i className="fa-solid fa-paper-plane"></i> {settings.site_copy.contact_form_send_label}</>)}
             </button>
             <p className="contact__delivery-status" aria-live="polite">
@@ -137,6 +188,7 @@ export function Contact({ settings }: ContactProps) {
         .contact__delivery-status { display: flex; flex-direction: column; gap: 8px; color: var(--color-text-muted); font-size: 0.8125rem; }
         .contact__delivery-error { color: var(--color-error); }
         .contact__delivery-success { color: var(--color-success); }
+        .contact__captcha { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
         .contact__fallback-link { color: var(--color-text-secondary); text-decoration: underline; text-underline-offset: 3px; }
         .contact__fallback-link:hover { color: var(--color-accent); }
       `}</style>

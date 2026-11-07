@@ -63,6 +63,50 @@ async function consumePersistentRateLimit(clientAddress: string): Promise<boolea
   return await response.json() === true
 }
 
+interface ContactSecuritySettings {
+  captchaEnabled: boolean
+  honeypotEnabled: boolean
+}
+
+async function loadContactSecuritySettings(): Promise<ContactSecuritySettings> {
+  const projectUrl = edgeRuntime.env.get('SUPABASE_URL')
+  const serviceRoleKey = edgeRuntime.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!projectUrl || !serviceRoleKey) throw new Error('Supabase server credentials are not configured.')
+
+  const response = await fetch(
+    `${projectUrl.replace(/\/$/, '')}/rest/v1/site_settings?select=security_captcha_enabled,security_honeypot_enabled&id=eq.1`,
+    {
+      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
+      signal: AbortSignal.timeout(5_000),
+    },
+  )
+  if (!response.ok) throw new Error('Unable to load contact security policy.')
+  const rows = await response.json() as Array<Partial<Record<'security_captcha_enabled' | 'security_honeypot_enabled', boolean>>>
+  if (!rows[0] || typeof rows[0].security_captcha_enabled !== 'boolean' || typeof rows[0].security_honeypot_enabled !== 'boolean') {
+    throw new Error('Contact security settings are missing. Apply the contact security migration.')
+  }
+  return {
+    captchaEnabled: rows[0].security_captcha_enabled,
+    honeypotEnabled: rows[0].security_honeypot_enabled,
+  }
+}
+
+async function verifyTurnstile(token: string, remoteIp: string): Promise<boolean> {
+  const secret = edgeRuntime.env.get('TURNSTILE_SECRET_KEY')
+  if (!secret) throw new Error('Turnstile secret key is not configured.')
+  const form = new URLSearchParams({ secret, response: token })
+  if (remoteIp !== 'unknown-client') form.set('remoteip', remoteIp)
+  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: form,
+    signal: AbortSignal.timeout(5_000),
+  })
+  if (!response.ok) throw new Error('Turnstile verification service is unavailable.')
+  const result = await response.json() as { success?: boolean }
+  return result.success === true
+}
+
 edgeRuntime.serve(async (request: Request) => {
   const origin = request.headers.get('origin')
   const allowed = allowedOrigins()
@@ -73,21 +117,6 @@ edgeRuntime.serve(async (request: Request) => {
   }
   if (request.method !== 'POST') return jsonResponse({ error: 'Method not allowed.' }, 405, origin)
   if (origin && !allowed.includes(origin)) return jsonResponse({ error: 'Origin not allowed.' }, 403, origin)
-
-  // Use gateway-provided IP headers only; do not trust a caller-supplied
-  // X-Forwarded-For chain. Only the salted hash is persisted in Postgres.
-  const clientAddress = request.headers.get('cf-connecting-ip')
-    ?? request.headers.get('x-real-ip')
-    ?? request.headers.get('x-forwarded-for')?.split(',').pop()?.trim()
-    ?? 'unknown-client'
-  try {
-    if (!await consumePersistentRateLimit(clientAddress)) {
-      return jsonResponse({ error: 'Too many messages. Please wait 10 minutes and try again.' }, 429, origin)
-    }
-  } catch (error) {
-    console.error('Contact rate limiting failed closed.', error)
-    return jsonResponse({ error: 'The contact service is temporarily unavailable.' }, 503, origin)
-  }
 
   let payload: { name?: unknown; email?: unknown; message?: unknown; website?: unknown }
   try {
@@ -100,9 +129,44 @@ edgeRuntime.serve(async (request: Request) => {
     return jsonResponse({ error: 'Invalid request body.' }, 400, origin)
   }
 
-  // Hidden honeypot field used to reject simple automated form submissions.
-  if (typeof payload.website === 'string' && payload.website.trim()) {
+  let security: ContactSecuritySettings
+  try {
+    security = await loadContactSecuritySettings()
+  } catch (error) {
+    console.error('Unable to load contact security policy.', error)
+    return jsonResponse({ error: 'The contact service is not configured. Please use the email fallback.' }, 503, origin)
+  }
+
+  // Use gateway-provided IP headers; persist only a salted hash server-side.
+  const clientAddress = request.headers.get('cf-connecting-ip')
+    ?? request.headers.get('x-real-ip')
+    ?? request.headers.get('x-forwarded-for')?.split(',').pop()?.trim()
+    ?? 'unknown-client'
+
+  if (security.honeypotEnabled && typeof payload.website === 'string' && payload.website.trim()) {
     return jsonResponse({ ok: true }, 200, origin)
+  }
+
+  if (security.captchaEnabled) {
+    const captchaToken = typeof payload.captchaToken === 'string' ? payload.captchaToken.trim() : ''
+    if (!captchaToken) return jsonResponse({ error: 'Complete the CAPTCHA before sending.', code: 'captcha_required' }, 400, origin)
+    try {
+      if (!await verifyTurnstile(captchaToken, clientAddress)) {
+        return jsonResponse({ error: 'CAPTCHA verification failed. Please try again.', code: 'captcha_failed' }, 400, origin)
+      }
+    } catch (error) {
+      console.error('Turnstile verification unavailable.', error)
+      return jsonResponse({ error: 'CAPTCHA verification is unavailable. Please use the email fallback.', code: 'captcha_unavailable' }, 503, origin)
+    }
+  }
+
+  try {
+    if (!await consumePersistentRateLimit(clientAddress)) {
+      return jsonResponse({ error: 'Too many messages. Please wait 10 minutes and try again.', code: 'rate_limited' }, 429, origin)
+    }
+  } catch (error) {
+    console.error('Contact rate limiting failed closed.', error)
+    return jsonResponse({ error: 'The contact service is temporarily unavailable.' }, 503, origin)
   }
 
   const name = typeof payload.name === 'string' ? payload.name.trim() : ''
@@ -119,36 +183,49 @@ edgeRuntime.serve(async (request: Request) => {
   const recipient = edgeRuntime.env.get('CONTACT_TO_EMAIL')
   if (!apiKey || !from || !recipient) {
     console.error('Contact function is missing RESEND_API_KEY, CONTACT_FROM_EMAIL, or CONTACT_TO_EMAIL.')
-    return jsonResponse({ error: 'The direct contact service is not configured yet.' }, 503, origin)
+    return jsonResponse({ ok: false, fallback: true, error: 'Resend is not configured. Your message will be opened in your email application.' }, 200, origin)
   }
 
-  const emailResponse = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from,
-      to: [recipient],
-      reply_to: email,
-      subject: `Portfolio contact — ${name.replace(/[\r\n]/g, ' ')}`,
-      text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
-    }),
-    signal: AbortSignal.timeout(10_000),
-  }).catch((error: unknown) => {
-    console.error('Email provider request failed.', error)
-    return null
-  })
+  const idempotencyKey = crypto.randomUUID()
+  let lastFailure: string | null = null
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const emailResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+        },
+        body: JSON.stringify({
+          from,
+          to: [recipient],
+          reply_to: email,
+          subject: `Portfolio contact — ${name.replace(/[\r\n]/g, ' ')}`,
+          text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      })
 
-  if (!emailResponse?.ok) {
-    const providerMessage = emailResponse ? await emailResponse.text().catch(() => '') : ''
-    console.error('Email provider rejected the contact message.', {
-      status: emailResponse?.status,
-      response: providerMessage.slice(0, 1000),
-    })
-    return jsonResponse({ error: 'The message could not be delivered. Please use the email fallback.' }, 502, origin)
+      if (emailResponse.ok) return jsonResponse({ ok: true }, 200, origin)
+
+      const providerMessage = await emailResponse.text().catch(() => '')
+      lastFailure = `Resend returned HTTP ${emailResponse.status}.`
+      console.error('Email provider rejected the contact message.', {
+        attempt,
+        status: emailResponse.status,
+        response: providerMessage.slice(0, 1000),
+      })
+    } catch (error) {
+      lastFailure = error instanceof Error ? error.message : 'Unknown provider error.'
+      console.error('Email provider request failed.', { attempt, error })
+    }
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400))
   }
 
-  return jsonResponse({ ok: true }, 200, origin)
+  return jsonResponse({
+    ok: false,
+    fallback: true,
+    error: `Resend failed after two attempts (${lastFailure ?? 'unknown error'}). Your message will be opened in your email application.`,
+  }, 200, origin)
 })

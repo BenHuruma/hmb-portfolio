@@ -10,7 +10,7 @@ import type { SiteCopy } from '../lib/siteCopy'
 import { SUPPORTED_LANGUAGES, type Language } from '../lib/locales'
 import { uploadPortfolioPhoto, validatePortfolioPhoto } from '../lib/portfolioPhotos'
 
-type AdminSectionId = 'language' | 'appearance' | 'copy' | 'hero' | 'about' | 'skills' | 'education' | 'achievements' | 'contact' | 'social'
+type AdminSectionId = 'language' | 'appearance' | 'copy' | 'hero' | 'about' | 'skills' | 'education' | 'achievements' | 'contact' | 'security' | 'social'
 type SudoAction = 'save' | 'photo-upload'
 
 const ADMIN_SECTIONS: Array<{ id: AdminSectionId; label: string; icon: string }> = [
@@ -23,6 +23,7 @@ const ADMIN_SECTIONS: Array<{ id: AdminSectionId; label: string; icon: string }>
   { id: 'education', label: 'Formation', icon: 'fa-solid fa-graduation-cap' },
   { id: 'achievements', label: 'Réalisations', icon: 'fa-solid fa-trophy' },
   { id: 'contact', label: 'Contact', icon: 'fa-solid fa-envelope' },
+  { id: 'security', label: 'Sécurité', icon: 'fa-solid fa-shield-halved' },
   { id: 'social', label: 'Réseaux sociaux', icon: 'fa-solid fa-share-nodes' },
 ]
 
@@ -108,10 +109,12 @@ export function AdminDashboard() {
   }
 
   const update = <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
+    setSaveNotice(null)
     setForm((prev) => prev ? { ...prev, [key]: value } : prev)
   }
 
   const updateCopy = <K extends keyof SiteCopy>(key: K, value: SiteCopy[K]) => {
+    setSaveNotice(null)
     setForm((prev) => prev ? { ...prev, site_copy: { ...prev.site_copy, [key]: value } } : prev)
   }
 
@@ -755,6 +758,34 @@ export function AdminDashboard() {
             </div>
           </section>
 
+          <section className="admin__section" hidden={activeSection !== 'security'}>
+            <h2 className="admin__section-title"><i className="fa-solid fa-shield-halved"></i> Sécurité du portfolio</h2>
+            <p className="admin__section-hint">Ces réglages contrôlent la protection du formulaire public. Les modifications sont sauvegardées avec le sudo habituel. La clé secrète CAPTCHA ne se saisit jamais ici : elle reste dans les secrets de la fonction Supabase.</p>
+            <label className="admin__security-toggle">
+              <span>
+                <strong>Activer le CAPTCHA Cloudflare Turnstile</strong>
+                <small>Activé par défaut. Les visiteurs doivent réussir le défi avant l’envoi direct.</small>
+              </span>
+              <input type="checkbox" checked={form.security_captcha_enabled} onChange={(e) => update('security_captcha_enabled', e.target.checked)} />
+            </label>
+            <div className="admin__field">
+              <label htmlFor="turnstile-site-key">Clé publique Turnstile (site key)</label>
+              <input id="turnstile-site-key" className="admin__input" type="text" autoComplete="off" value={form.turnstile_site_key} onChange={(e) => update('turnstile_site_key', e.target.value.trim())} placeholder="0x4AAAA…" />
+              <p className="admin__section-hint">Cette clé publique est prévue pour le navigateur. Créez le widget sur Cloudflare Turnstile et autorisez `benhuruma.github.io`. Pour tester localement, autorisez aussi `localhost`.</p>
+            </div>
+            <label className="admin__security-toggle">
+              <span>
+                <strong>Activer le champ honeypot</strong>
+                <small>Champ invisible aux personnes, rempli par certains bots pour filtrer les soumissions automatisées.</small>
+              </span>
+              <input type="checkbox" checked={form.security_honeypot_enabled} onChange={(e) => update('security_honeypot_enabled', e.target.checked)} />
+            </label>
+            <div className="admin__security-note" role="note">
+              <i className="fa-solid fa-lock"></i>
+              <span>Dans Supabase → Edge Functions → Secrets, gardez `TURNSTILE_SECRET_KEY`, `CONTACT_RATE_LIMIT_SALT`, `RESEND_API_KEY`, `CONTACT_FROM_EMAIL` et `CONTACT_TO_EMAIL`. Ils ne sont jamais visibles ou modifiables depuis cette interface.</span>
+            </div>
+          </section>
+
           {/* Save bar */}
           <div className="admin__save-bar">
             {saved && <span className="admin__saved"><i className="fa-solid fa-check"></i> Modifications enregistrées</span>}
@@ -862,6 +893,13 @@ export function AdminDashboard() {
         .admin__field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
         .admin__field:last-child { margin-bottom: 0; }
         .admin__field label { font-size: 0.75rem; font-weight: 500; color: var(--color-text-secondary); }
+        .admin__security-toggle { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 0; border-top: 1px solid var(--color-border-soft); color: var(--color-text); cursor: pointer; }
+        .admin__security-toggle strong, .admin__security-toggle small { display: block; }
+        .admin__security-toggle strong { font-size: 0.875rem; }
+        .admin__security-toggle small { margin-top: 4px; color: var(--color-text-muted); font-size: 0.75rem; font-weight: 400; }
+        .admin__security-toggle input { width: 20px; height: 20px; flex: 0 0 auto; accent-color: var(--color-accent); }
+        .admin__security-note { display: flex; gap: 10px; padding: 14px; border: 1px solid var(--color-border-soft); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text-secondary); font-size: 0.8125rem; line-height: 1.55; }
+        .admin__security-note i { color: var(--color-accent); }
         .admin__input, .admin__textarea { padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); font-size: 0.875rem; transition: border-color var(--transition), box-shadow var(--transition); resize: vertical; }
         .admin__input:focus, .admin__textarea:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-soft); }
         .admin__grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }

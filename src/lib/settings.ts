@@ -15,7 +15,7 @@ export interface SettingsLoadResult {
 }
 
 function mapRow(data: Record<string, unknown>): SiteSettings {
-  const base: Omit<SiteSettings, 'default_language'> = {
+  const base: Omit<SiteSettings, 'default_language' | 'security_captcha_enabled' | 'security_honeypot_enabled' | 'turnstile_site_key'> = {
     site_copy: mergeSiteCopy(data.site_copy),
     hero_name: data.hero_name as string,
     hero_subtitle: data.hero_subtitle as string,
@@ -43,6 +43,9 @@ function mapRow(data: Record<string, unknown>): SiteSettings {
   return {
     ...base,
     default_language: defaultLanguage,
+    security_captcha_enabled: data.security_captcha_enabled !== false,
+    security_honeypot_enabled: data.security_honeypot_enabled !== false,
+    turnstile_site_key: typeof data.turnstile_site_key === 'string' ? data.turnstile_site_key : '',
   }
 }
 
@@ -90,7 +93,7 @@ export async function loadSettings(): Promise<SettingsLoadResult> {
     const { data, error } = await withTimeout(
       supabase
         .from('site_settings')
-        .select('id, site_copy, default_language, hero_name, hero_subtitle, hero_status, about_text, about_location, about_education, about_languages, about_email, skills_mastered, skills_progress, education_items, achievements, contact_email, contact_phone, contact_location, hero_photo_url, about_photo_url, linkedin_url, github_url, twitter_url, whatsapp_url')
+        .select('id, site_copy, default_language, security_captcha_enabled, security_honeypot_enabled, turnstile_site_key, hero_name, hero_subtitle, hero_status, about_text, about_location, about_education, about_languages, about_email, skills_mastered, skills_progress, education_items, achievements, contact_email, contact_phone, contact_location, hero_photo_url, about_photo_url, linkedin_url, github_url, twitter_url, whatsapp_url')
         .eq('id', 1)
         .maybeSingle(),
       SETTINGS_REQUEST_TIMEOUT_MS,
@@ -126,6 +129,9 @@ export async function updateSettings(settings: SiteSettings): Promise<void> {
     .update({
       site_copy: settings.site_copy,
       default_language: settings.default_language,
+      security_captcha_enabled: settings.security_captcha_enabled,
+      security_honeypot_enabled: settings.security_honeypot_enabled,
+      turnstile_site_key: settings.turnstile_site_key,
       hero_name: settings.hero_name,
       hero_subtitle: settings.hero_subtitle,
       hero_status: settings.hero_status,
