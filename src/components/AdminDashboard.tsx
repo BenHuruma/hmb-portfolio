@@ -28,6 +28,15 @@ const ADMIN_SECTIONS: Array<{ id: AdminSectionId; label: string; icon: string }>
 
 const draftStorageKey = (email: string) => `hmb-portfolio-admin-draft:${email.toLowerCase()}`
 
+function stableSerialize(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>
+    return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${stableSerialize(record[key])}`).join(',')}}`
+  }
+  return JSON.stringify(value) ?? 'null'
+}
+
 export function AdminDashboard() {
   const { email, signOut } = useAuth()
   const { settings, loading, reload, isFallback, loadError } = useSettings()
@@ -39,6 +48,7 @@ export function AdminDashboard() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveNotice, setSaveNotice] = useState<string | null>(null)
   const [sudoOpen, setSudoOpen] = useState(false)
   const [sudoPassword, setSudoPassword] = useState('')
   const [sudoError, setSudoError] = useState<string | null>(null)
@@ -106,8 +116,14 @@ export function AdminDashboard() {
   }
 
   const handleSaveClick = (action: SudoAction = 'save') => {
+    setSaveError(null)
+    setSaveNotice(null)
     if (isFallback) {
       setSaveError(`Enregistrement désactivé : les réglages Supabase n’ont pas pu être chargés${loadError ? ` (${loadError})` : ''}. Réessayez de recharger la page avant de modifier le contenu.`)
+      return
+    }
+    if (action === 'save' && settings && form && stableSerialize(form) === stableSerialize(settings)) {
+      setSaveNotice('Aucune modification à enregistrer.')
       return
     }
     setSudoAction(action)
@@ -143,8 +159,8 @@ export function AdminDashboard() {
         setPhotoMode('upload')
         setPendingPhoto(null)
         setPhotoError(null)
-        setSaveError('Photo téléversée. Cliquez sur « Enregistrer les modifications » pour publier ce changement.')
-        setTimeout(() => setSaveError(null), 7000)
+        setSaveNotice('Photo téléversée. Cliquez sur « Enregistrer les modifications » pour la publier sur le site.')
+        setTimeout(() => setSaveNotice(null), 7000)
         setSudoOpen(false)
         setSudoPassword('')
         return
@@ -152,6 +168,7 @@ export function AdminDashboard() {
       await updateSettings(form)
       if (email) localStorage.removeItem(draftStorageKey(email))
       setDraftRestored(false)
+      setSaveNotice(null)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
       await reload()
@@ -741,6 +758,7 @@ export function AdminDashboard() {
           {/* Save bar */}
           <div className="admin__save-bar">
             {saved && <span className="admin__saved"><i className="fa-solid fa-check"></i> Modifications enregistrées</span>}
+            {saveNotice && <span className="admin__save-notice" role="status"><i className="fa-solid fa-circle-info"></i> {saveNotice}</span>}
             {saveError && <span className="admin__save-error"><i className="fa-solid fa-circle-exclamation"></i> {saveError}</span>}
             <button type="button" onClick={() => handleSaveClick()} className="admin__btn admin__btn--primary" disabled={saving || isFallback}>
               {saving ? <><i className="fa-solid fa-spinner fa-spin"></i> Enregistrement...</> : <><i className="fa-solid fa-floppy-disk"></i> Enregistrer les modifications</>}
@@ -857,6 +875,7 @@ export function AdminDashboard() {
         .admin__add-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
         .admin__save-bar { position: sticky; bottom: 24px; display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 16px 24px; background: var(--color-bg-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
         .admin__saved { font-size: 0.8125rem; color: var(--color-success); display: flex; align-items: center; gap: 6px; }
+        .admin__save-notice { font-size: 0.8125rem; color: var(--color-text-secondary); display: flex; align-items: center; gap: 6px; }
         .admin__save-error { font-size: 0.8125rem; color: var(--color-error); display: flex; align-items: center; gap: 6px; }
         .sudo-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; padding: 24px; animation: fade-in 0.2s ease; }
         .sudo-modal { width: 100%; max-width: 420px; background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-lg); }

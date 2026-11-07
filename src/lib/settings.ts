@@ -6,6 +6,7 @@ import { mergeSiteCopy } from './siteCopy'
 import { isSupportedLanguage } from './locales'
 
 const SETTINGS_REQUEST_TIMEOUT_MS = 12_000
+const LAST_KNOWN_SETTINGS_KEY = 'hmb-portfolio-last-known-settings-v1'
 
 export interface SettingsLoadResult {
   settings: SiteSettings
@@ -45,9 +46,44 @@ function mapRow(data: Record<string, unknown>): SiteSettings {
   }
 }
 
+export function readLastKnownSettings(): SiteSettings | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(LAST_KNOWN_SETTINGS_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw) as Record<string, unknown>
+    const requiredStrings = [
+      'hero_name', 'hero_subtitle', 'hero_status', 'about_text', 'about_location',
+      'about_education', 'about_languages', 'about_email', 'skills_mastered',
+      'skills_progress', 'contact_email', 'contact_phone', 'contact_location',
+      'hero_photo_url', 'about_photo_url', 'linkedin_url', 'github_url',
+      'twitter_url', 'whatsapp_url',
+    ]
+    if (!requiredStrings.every((key) => typeof data[key] === 'string')) return null
+    if (!Array.isArray(data.education_items) || !Array.isArray(data.achievements)) return null
+    if (!data.site_copy || typeof data.site_copy !== 'object' || Array.isArray(data.site_copy)) return null
+    return mapRow(data)
+  } catch {
+    return null
+  }
+}
+
+export function writeLastKnownSettings(settings: SiteSettings): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(LAST_KNOWN_SETTINGS_KEY, JSON.stringify(settings))
+  } catch (error) {
+    console.warn('Unable to cache the latest Supabase portfolio settings.', error)
+  }
+}
+
 export async function loadSettings(): Promise<SettingsLoadResult> {
   if (!isSupabaseConfigured) {
-    return { settings: DEFAULT_SITE_SETTINGS, isFallback: true, error: 'Supabase n’est pas configuré.' }
+    return {
+      settings: readLastKnownSettings() ?? DEFAULT_SITE_SETTINGS,
+      isFallback: true,
+      error: 'Supabase n’est pas configuré.',
+    }
   }
 
   try {
@@ -63,11 +99,13 @@ export async function loadSettings(): Promise<SettingsLoadResult> {
 
     if (error) throw error
     if (!data) throw new Error('No settings found')
-    return { settings: mapRow(data), isFallback: false }
+    const settings = mapRow(data)
+    writeLastKnownSettings(settings)
+    return { settings, isFallback: false }
   } catch (error) {
     console.warn('Supabase settings unavailable; using built-in portfolio content.', error)
     return {
-      settings: DEFAULT_SITE_SETTINGS,
+      settings: readLastKnownSettings() ?? DEFAULT_SITE_SETTINGS,
       isFallback: true,
       error: error instanceof Error ? error.message : 'Lecture Supabase indisponible.',
     }
@@ -117,5 +155,6 @@ export async function updateSettings(settings: SiteSettings): Promise<void> {
 
   if (error) throw error
   if (!data) throw new Error('Not authorized to update site settings')
+  writeLastKnownSettings(settings)
 }
 
